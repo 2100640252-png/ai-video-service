@@ -1,7 +1,7 @@
 {
-  "versionCode": 3,
-  "versionName": "1.2",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.2/couples-play-debug-v1.2.apk",
-  "notes": "反馈入口 + 后台内容打开就同步 + App内更新提示",
-  "publishedAt": "2026-11-16T16:54:00Z"
+  "versionCode": 4,
+  "versionName": "1.3",
+  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.3/couples-play-debug-v1.3.apk",
+  "notes": "独立第二页面 + 真骰子三档 + 背景音乐 + 动态暧昧文字 + App内更新提示",
+  "publishedAt": "2026-11-16T17:50:00Z"
 }

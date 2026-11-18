@@ -199,6 +199,20 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #adSlot{min-height:60px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;overflow:hidden}
 #adSlot img,#adSlot iframe,#adSlot video{max-width:100%;height:auto;border:0}
 #adClose{margin-top:14px}
+/* ---------- Video ad gate (unlock heat tier 2 / 3) ---------- */
+#videoGateOverlay{position:fixed;inset:0;z-index:90;background:rgba(8,1,4,.92);display:none;align-items:center;justify-content:center;padding:20px}
+#videoGateOverlay.open{display:flex}
+#videoGateOverlay .vg-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:100%;max-width:520px;padding:18px;box-shadow:var(--shadow);text-align:center}
+#videoGateOverlay .ad-label{font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;margin-bottom:10px}
+#videoGateOverlay h3{font-family:"Noto Serif SC",serif;font-size:19px;margin:0 0 8px}
+#vgProgress{color:var(--ink2);font-size:14px;margin:0 0 12px}
+#vgVideo{width:100%;max-width:520px;background:#000;border-radius:12px;display:none}
+#vgBarWrap{display:flex;align-items:center;gap:10px;margin-top:12px}
+#vgBar{flex:1;height:8px;background:var(--surface2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+#vgBarFill{height:100%;width:0%;background:var(--accent)}
+#vgTime{font-size:13px;color:var(--ink2);white-space:nowrap}
+#vgMsg{color:var(--gold);font-weight:700;min-height:1.5em;margin:12px 0 0}
+#videoGateOverlay .btn{margin:12px 6px 0}
 #adBanner{display:none;margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);text-align:center}
 #adBanner.open{display:block}
 #adBanner .ad-banner-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
@@ -355,6 +369,22 @@ footer p{margin:0;max-width:760px}
 </div>
 </div>
 
+<!-- Video ad gate: watch video ads to unlock heat tier 2 / 3 -->
+<div id="videoGateOverlay" role="dialog" aria-modal="true" aria-label="视频广告">
+<div class="vg-box">
+<div class="ad-label">AD · 视频广告</div>
+<h3 id="vgTitle"></h3>
+<p id="vgProgress"></p>
+<video id="vgVideo" playsinline webkit-playsinline preload="auto"></video>
+<div id="vgBarWrap"><div id="vgBar"><div id="vgBarFill"></div></div><span id="vgTime"></span></div>
+<p id="vgMsg"></p>
+<button class="btn gold" id="vgPlayBtn" data-i="vgPlay" style="display:none">▶ 播放广告</button>
+<button class="btn gold" id="vgNextBtn" data-i="vgNext" style="display:none">继续看下一个</button>
+<button class="btn" id="vgRetryBtn" data-i="vgRetry" style="display:none">重试</button>
+<button class="btn" id="vgCloseBtn" data-i="vgClose">关闭 ✕</button>
+</div>
+</div>
+
 <!-- Background music: corner toggle (starts after the gate) -->
 <button id="musicBtn" type="button" aria-label="背景音乐开 / 关 · Music on / off" title="背景音乐 · Music">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="mnote" d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line class="mslash" x1="3" y1="3" x2="21" y2="21" style="display:none"/></svg>
@@ -456,7 +486,18 @@ fbCtxGame:{zh:"当前页面：",en:"You're on: "},
 fbCtxHome:{zh:"游戏首页",en:"Game home"},
 backHome:{zh:"返回首页",en:"Back to games"},
 rollDice:{zh:"摇骰子",en:"Roll the Dice"},
-diceTierName:{zh:["温柔","升温","大胆"],en:["Gentle","Heating Up","Bold"]}
+diceTierName:{zh:["温柔","升温","大胆"],en:["Gentle","Heating Up","Bold"]},
+vgTitle:{zh:"解锁「{TIER}」挡位",en:"Unlock the “{TIER}” tier"},
+vgProgress:{zh:"看完 {NEED} 个视频广告即可解锁（已看 {GOT}/{NEED}）",en:"Watch {NEED} video ad(s) to unlock (watched {GOT}/{NEED})"},
+vgNeedMore:{zh:"还需再看 {N} 个视频广告",en:"{N} more video ad(s) to go"},
+vgUnlocked:{zh:"已解锁「{TIER}」！",en:"“{TIER}” unlocked!"},
+vgNoAd:{zh:"暂时没有广告，请稍后再试",en:"No ads right now — please try again later"},
+vgRetry:{zh:"重试",en:"Retry"},
+vgNext:{zh:"继续看下一个",en:"Watch the next one"},
+vgClose:{zh:"关闭 ✕",en:"Close ✕"},
+vgPlay:{zh:"▶ 播放广告",en:"▶ Play ad"},
+vgTimeLeft:{zh:"还剩 {S} 秒",en:"{S}s left"},
+vgLoading:{zh:"正在加载广告…",en:"Loading ad…"},
 };
 function t(k){ return I[k]? I[k][LANG]: k;}
 function applyLang(){
@@ -695,6 +736,10 @@ clearTimer();
 currentGame = id;
 var gc0 = cfgGame(id);
 if(!keepState && gc0 && gc0.intensity>=1 && gc0.intensity<=3){ HEAT = gc0.intensity;}
+/* A game's configured intensity must not bypass the video gate:
+   every game ships intensity 2, so a fresh open would otherwise
+   force HEAT 2 for free. Clamp back to an unlocked tier. */
+if(typeof vgEnforceHeat === "function"){ vgEnforceHeat(); }
 syncHeatSeg();
 renderGrid();
 var game = GAMES.filter(function(x){return x.id===id;})[0];
@@ -1298,7 +1343,9 @@ applyLang();
 });
 document.getElementById("heatSeg").addEventListener("click", function(e){
 var btn = e.target.closest("button"); if(!btn) return;
-HEAT = parseInt(btn.getAttribute("data-heat"),10);
+var h = parseInt(btn.getAttribute("data-heat"),10);
+if(h !== HEAT && !vgIsUnlocked(h)){ vgOpenGate(h); return; }
+HEAT = h;
 syncHeatSeg();
 if(currentGame){ openGame(currentGame, true);}
 });
@@ -1309,6 +1356,7 @@ document.getElementById("gameHeatSeg").addEventListener("click", function(e){
 var btn = e.target.closest("button"); if(!btn) return;
 var h = parseInt(btn.getAttribute("data-heat"),10);
 if(h === HEAT){ return;}
+if(!vgIsUnlocked(h)){ vgOpenGate(h); return; }
 HEAT = h;
 syncHeatSeg();
 if(currentGame){ openGame(currentGame, true);}
@@ -1554,6 +1602,7 @@ for(var i=0;i<lbs.length;i++){ lbs[i].classList.toggle("on", lbs[i].getAttribute
 applyLang();
 renderAnnouncement();
 renderGateNotice();
+vgEnforceHeat();
 }catch(e){ /* a malformed config must never break the game */ }
 }
 /* ---- Ads: fire a configured trigger through its configured network ---- */
@@ -1629,6 +1678,310 @@ var adCloseBtn = document.getElementById("adClose");
 if(adCloseBtn){ adCloseBtn.onclick = function(){ document.getElementById("adOverlay").classList.remove("open"); document.getElementById("adSlot").innerHTML = ""; };}
 var adBannerCloseBtn = document.getElementById("adBannerClose");
 if(adBannerCloseBtn){ adBannerCloseBtn.onclick = function(){ var b = document.getElementById("adBanner"); if(b){ b.classList.remove("open");} var s = document.getElementById("adBannerSlot"); if(s){ s.innerHTML = ""; } };}
+
+/* ================= Video ad tier gate =================
+   Heat 2 (升温) unlocks after 1 fully-watched video ad, heat 3 (大胆)
+   after 2. Watching 2 videos for heat 3 also satisfies heat 2.
+   Unlocks persist per device in localStorage ("cp_video_unlocks").
+   The gate is active ONLY when the remote config sets
+   ads.videoGate = {enabled:true, vastTag:"<http(s) URL>", required:{"2":1,"3":2}}.
+   Without it (or with an empty tag), tiers stay free exactly as before.
+   The video is a minimal VAST player: fetch the tag, follow Wrapper
+   redirects (max 3), play the best MP4, fire impression / quartile /
+   complete beacons, count the watch only when the video ends. No skip
+   button; seeking is reset; closing gives up without counting. */
+var VG_STORE_KEY = "cp_video_unlocks";
+var vgWatchedMem = 0;
+var vgLsOk = false;
+try{ localStorage.setItem("__cp_vg_test__", "1"); localStorage.removeItem("__cp_vg_test__"); vgLsOk = true; }catch(e){ vgLsOk = false; }
+function vgWatched(){
+if(vgLsOk){
+try{ var o = JSON.parse(localStorage.getItem(VG_STORE_KEY) || "{}"); var n = parseInt(o.watched, 10); return isNaN(n)? 0: Math.max(0, n); }catch(e){ return vgWatchedMem; }
+}
+return vgWatchedMem;
+}
+function vgSetWatched(n){
+vgWatchedMem = n;
+if(vgLsOk){ try{ localStorage.setItem(VG_STORE_KEY, JSON.stringify({watched: n})); }catch(e){} }
+}
+function vgGateCfg(){
+if(!CFG || !CFG.ads || !CFG.ads.videoGate) return null;
+var g = CFG.ads.videoGate;
+if(g.enabled !== true) return null;
+var tag = (typeof g.vastTag === "string")? g.vastTag.replace(/^\s+|\s+$/g, ""): "";
+if(!/^https?:\/\//i.test(tag)) return null;
+var r2 = parseInt(g.required && g.required["2"], 10); if(isNaN(r2) || r2 < 0) r2 = 1;
+var r3 = parseInt(g.required && g.required["3"], 10); if(isNaN(r3) || r3 < 0) r3 = 2;
+return {tag: tag, r2: r2, r3: r3};
+}
+function vgRequired(heat){
+var g = vgGateCfg(); if(!g) return 0;
+if(heat === 2) return g.r2;
+if(heat === 3) return g.r3;
+return 0;
+}
+function vgIsUnlocked(heat){
+if(heat <= 1) return true;
+return vgWatched() >= vgRequired(heat);
+}
+function vgEnforceHeat(){
+if(HEAT > 1 && !vgIsUnlocked(HEAT)){ HEAT = 1; syncHeatSeg(); }
+}
+/* === VAST-START === */
+function vgText(parent, tag){
+var els = parent.getElementsByTagName(tag);
+if(!els || !els.length) return "";
+return (els[0].textContent || "").replace(/^\s+|\s+$/g, "");
+}
+function vgCollect(parent, tag){
+var out = [];
+var els = parent.getElementsByTagName(tag);
+for(var i=0;i<els.length;i++){ var s = (els[i].textContent || "").replace(/^\s+|\s+$/g, ""); if(s){ out.push(s); } }
+return out;
+}
+function vgParseDuration(s){
+if(!s) return 0;
+var p = String(s).split(":");
+var n = 0;
+for(var i=0;i<p.length;i++){ n = n * 60 + (parseInt(p[i], 10) || 0); }
+return n;
+}
+function vgPickMedia(linear){
+var mfs = linear.getElementsByTagName("MediaFile");
+var best = null, bestScore = -1;
+for(var i=0;i<mfs.length;i++){
+var m = mfs[i];
+var type = (m.getAttribute("type") || "").toLowerCase();
+if(type !== "video/mp4") continue;
+var url = (m.textContent || "").replace(/^\s+|\s+$/g, "");
+if(!url) continue;
+var w = parseInt(m.getAttribute("width") || "0", 10); if(isNaN(w)) w = 0;
+if(w > 1280) w = 1280;
+var b = parseInt(m.getAttribute("bitrate") || "0", 10); if(isNaN(b)) b = 0;
+var score = w * 1000000 + b;
+if(score > bestScore){ bestScore = score; best = {url: url, width: w, bitrate: b}; }
+}
+return best;
+}
+function vgTracking(linear){
+var out = {};
+var evs = linear.getElementsByTagName("Tracking");
+for(var i=0;i<evs.length;i++){
+var ev = evs[i].getAttribute("event");
+var url = (evs[i].textContent || "").replace(/^\s+|\s+$/g, "");
+if(ev && url){ if(!out[ev]) out[ev] = []; out[ev].push(url); }
+}
+return out;
+}
+function vgBuildAd(inl){
+var creatives = inl.getElementsByTagName("Creative");
+for(var j=0;j<creatives.length;j++){
+var lin = creatives[j].getElementsByTagName("Linear");
+if(!lin || !lin.length) continue;
+var L = lin[0];
+var mf = vgPickMedia(L);
+if(!mf) continue;
+return {
+mediaUrl: mf.url,
+duration: vgParseDuration(vgText(L, "Duration")),
+impressions: vgCollect(inl, "Impression"),
+tracking: vgTracking(L),
+clickThrough: vgText(L, "ClickThrough")
+};
+}
+return null;
+}
+function vgFetchVast(url, hops, done){
+if(hops > 3){ done(null); return; }
+var ctrl = (typeof AbortController !== "undefined")? new AbortController(): null;
+var timer = ctrl? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, 8000): null;
+fetch(url, {cache:"no-store", signal: ctrl? ctrl.signal: undefined})
+.then(function(r){ if(timer){ clearTimeout(timer); } if(!r.ok){ throw new Error("vast http " + r.status); } return r.text(); })
+.then(function(txt){
+var doc = null;
+try{ doc = new DOMParser().parseFromString(txt, "text/xml"); }catch(e){ done(null); return; }
+if(!doc || (doc.getElementsByTagName("parsererror") || []).length){ done(null); return; }
+var ads = doc.getElementsByTagName("Ad");
+for(var i=0;i<ads.length;i++){
+var ad = ads[i];
+var w = ad.getElementsByTagName("Wrapper");
+if(w && w.length){
+var uri = vgText(w[0], "VASTAdTagURI");
+if(uri){ vgFetchVast(uri, hops + 1, done); return; }
+continue;
+}
+var inl = ad.getElementsByTagName("InLine");
+if(!inl || !inl.length) continue;
+var got = vgBuildAd(inl[0]);
+if(got){ done(got); return; }
+}
+done(null);
+})
+.catch(function(){ if(timer){ clearTimeout(timer); } done(null); });
+}
+/* === VAST-END === */
+var vgTargetHeat = 0;
+var vgAd = null;
+var vgLastTime = 0;
+var vgImpressionFired = false;
+var vgFiredQ = {};
+var vgDuration = 0;
+function vgSetMsg(s){ var el = document.getElementById("vgMsg"); if(el){ el.textContent = s || ""; } }
+function vgUpdateGateText(){
+var need = vgRequired(vgTargetHeat);
+var got = vgWatched();
+var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
+var title = document.getElementById("vgTitle");
+if(title){ title.textContent = t("vgTitle").replace("{TIER}", tierName); }
+var pr = document.getElementById("vgProgress");
+if(pr){ pr.textContent = t("vgProgress").replace("{NEED}", String(need)).replace("{GOT}", String(Math.min(got, need))); }
+}
+function vgShowState(st){
+var v = document.getElementById("vgVideo");
+var pb = document.getElementById("vgPlayBtn");
+var nb = document.getElementById("vgNextBtn");
+var rb = document.getElementById("vgRetryBtn");
+if(v){ v.style.display = (st === "video" || st === "playbtn" || st === "next")? "block": "none"; }
+if(pb){ pb.style.display = (st === "playbtn")? "inline-block": "none"; }
+if(nb){ nb.style.display = (st === "next")? "inline-block": "none"; }
+if(rb){ rb.style.display = (st === "noad")? "inline-block": "none"; }
+}
+function vgFire(urls){
+if(!urls) return;
+for(var i=0;i<urls.length;i++){ try{ var im = new Image(); im.src = urls[i]; }catch(e){} }
+}
+function vgUpdateBar(){
+var v = document.getElementById("vgVideo");
+if(!v) return;
+var d = vgDuration || v.duration || 0;
+var fill = document.getElementById("vgBarFill");
+var tm = document.getElementById("vgTime");
+if(d > 0){
+var pct = Math.min(100, Math.max(0, v.currentTime / d * 100));
+if(fill){ fill.style.width = pct + "%"; }
+var left = Math.max(0, Math.ceil(d - v.currentTime));
+if(tm){ tm.textContent = t("vgTimeLeft").replace("{S}", String(left)); }
+} else {
+if(fill){ fill.style.width = "0%"; }
+if(tm){ tm.textContent = ""; }
+}
+}
+function vgShowNoAd(){
+var v = document.getElementById("vgVideo");
+if(v){ try{ v.pause(); }catch(e){} v.removeAttribute("src"); try{ v.load(); }catch(e){} }
+vgSetMsg(t("vgNoAd"));
+vgShowState("noad");
+}
+function vgCloseGate(){
+var ov = document.getElementById("videoGateOverlay");
+if(ov){ ov.classList.remove("open"); }
+var v = document.getElementById("vgVideo");
+if(v){ try{ v.pause(); }catch(e){} v.removeAttribute("src"); try{ v.load(); }catch(e){} }
+vgAd = null;
+vgTargetHeat = 0;
+}
+function vgLoadAndPlay(){
+var g = vgGateCfg();
+if(!g){ vgShowNoAd(); return; }
+vgSetMsg(t("vgLoading"));
+vgShowState("loading");
+vgFetchVast(g.tag, 0, function(ad){
+if(!ad){ vgShowNoAd(); return; }
+vgAd = ad;
+vgImpressionFired = false;
+vgFiredQ = {};
+vgLastTime = 0;
+vgDuration = ad.duration || 0;
+var v = document.getElementById("vgVideo");
+if(!v){ vgShowNoAd(); return; }
+v.src = ad.mediaUrl;
+try{ v.load(); }catch(e){}
+vgShowState("video");
+var p = null;
+try{ p = v.play(); }catch(e){ p = null; }
+if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
+});
+}
+function vgOnEnded(){
+if(!vgTargetHeat){ return; }
+vgFire(vgAd? vgAd.tracking.complete: null);
+var n = vgWatched() + 1;
+vgSetWatched(n);
+if(vgIsUnlocked(vgTargetHeat)){
+var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
+vgSetMsg(t("vgUnlocked").replace("{TIER}", tierName));
+var h = vgTargetHeat;
+setTimeout(function(){
+vgCloseGate();
+HEAT = h;
+syncHeatSeg();
+if(currentGame){ openGame(currentGame, true); }
+}, 900);
+} else {
+var need = vgRequired(vgTargetHeat);
+var left = need - vgWatched();
+if(left < 1) left = 1;
+vgSetMsg(t("vgNeedMore").replace("{N}", String(left)));
+vgUpdateGateText();
+vgShowState("next");
+}
+}
+function vgOpenGate(targetHeat){
+vgTargetHeat = targetHeat;
+var ov = document.getElementById("videoGateOverlay");
+if(!ov) return;
+vgSetMsg("");
+vgUpdateGateText();
+ov.classList.add("open");
+vgLoadAndPlay();
+}
+function vgWireVideo(){
+var v = document.getElementById("vgVideo");
+if(!v || v._vgWired) return;
+v._vgWired = true;
+v.addEventListener("timeupdate", function(){
+if(v.seeking) return;
+vgLastTime = v.currentTime;
+vgUpdateBar();
+var d = vgDuration || v.duration || 0;
+if(d > 0){
+var q = v.currentTime / d;
+if(q >= 0.25 && !vgFiredQ.firstQuartile){ vgFiredQ.firstQuartile = true; vgFire(vgAd? vgAd.tracking.firstQuartile: null); }
+if(q >= 0.5 && !vgFiredQ.midpoint){ vgFiredQ.midpoint = true; vgFire(vgAd? vgAd.tracking.midpoint: null); }
+if(q >= 0.75 && !vgFiredQ.thirdQuartile){ vgFiredQ.thirdQuartile = true; vgFire(vgAd? vgAd.tracking.thirdQuartile: null); }
+}
+});
+v.addEventListener("play", function(){
+vgShowState("video");
+if(!vgImpressionFired){ vgImpressionFired = true; vgFire(vgAd? vgAd.impressions: null); vgFire(vgAd? vgAd.tracking.start: null); }
+});
+v.addEventListener("seeking", function(){
+if(Math.abs(v.currentTime - vgLastTime) > 0.5){ try{ v.currentTime = vgLastTime; }catch(e){} }
+});
+v.addEventListener("ended", function(){ vgOnEnded(); });
+v.addEventListener("click", function(){
+if(vgAd && vgAd.clickThrough){ window.open(vgAd.clickThrough, "_blank"); }
+});
+v.addEventListener("error", function(){
+if(vgAd){ vgShowNoAd(); }
+});
+}
+vgWireVideo();
+var vgCloseBtn = document.getElementById("vgCloseBtn");
+if(vgCloseBtn){ vgCloseBtn.onclick = function(){ vgCloseGate(); }; }
+var vgRetryBtn = document.getElementById("vgRetryBtn");
+if(vgRetryBtn){ vgRetryBtn.onclick = function(){ vgLoadAndPlay(); }; }
+var vgNextBtn = document.getElementById("vgNextBtn");
+if(vgNextBtn){ vgNextBtn.onclick = function(){ vgUpdateGateText(); vgLoadAndPlay(); }; }
+var vgPlayBtn = document.getElementById("vgPlayBtn");
+if(vgPlayBtn){ vgPlayBtn.onclick = function(){
+var v = document.getElementById("vgVideo");
+if(!v) return;
+var p = null;
+try{ p = v.play(); }catch(e){ p = null; }
+if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
+}; }
+vgEnforceHeat();
 function loadRemoteConfig(){
 if(typeof fetch !== "function") return;
 var ctrl = (typeof AbortController !== "undefined")? new AbortController(): null;

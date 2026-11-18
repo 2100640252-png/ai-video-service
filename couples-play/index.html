@@ -2009,12 +2009,12 @@ if(cfg && typeof cfg === "object"){ applyConfig(cfg); fireAd("app_open");}
 loadRemoteConfig();
 
 /* ================= App update check (v1.4) =================
-   Current build: versionCode 5, versionName "1.4". On entering (after
+   Current build: versionCode 6, versionName "1.5". On entering (after
    the gate), fetch the version manifest; only when its versionCode is
    greater than 5 AND apkUrl is present do we show the top banner.
    Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 5;
-var APP_VERSION_NAME = "1.4";
+var APP_VERSION_CODE = 6;
+var APP_VERSION_NAME = "1.5";
 var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
 var updateApkUrl = "";
 function checkForUpdate(){

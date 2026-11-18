@@ -1605,6 +1605,7 @@ applyLang();
 renderAnnouncement();
 renderGateNotice();
 vgEnforceHeat(); syncHeatSeg();
+try{ loadPageScripts((CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS); psDone = true; }catch(e){}
 }catch(e){ /* a malformed config must never break the game */ }
 }
 /* ---- Ads: fire a configured trigger through its configured network ---- */
@@ -1670,6 +1671,47 @@ injectAdCode(slot, code);
 var closeBtn = document.getElementById("adClose");
 if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad ✕";}
 ov.classList.add("open");
+}
+/* ================= Page ad scripts (popunder / social bar / native) =====
+   Load-once scripts that run with the page (not tied to a game event):
+   Adsterra Popunder + Social Bar + Native Banner, JuicyAds PopUnder +
+   Interstitial Native. The remote config can override them through
+   ads.pageScripts: [{key, enabled, code}]. When the config has no
+   pageScripts (or the fetch fails), the built-in defaults below run,
+   so the ads keep working. Toggle each one from the backend. */
+var PS_DEFAULTS = [
+{key:"adsterra-popunder", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://benchform.org/1/24a76c40453e6790851673a24200bb35\"><\/script>"},
+{key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
+{key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"},
+{key:"juicyads-popunder", enabled:true, code:"<script type=\"text/javascript\" src=\"https://js.juicyads.com/jp.php?c=4474z2w2s294u4r2p2e43384a4&u=https%3A%2F%2Fwww.juicyads.rocks\"><\/script>"},
+{key:"juicyads-interstitial", enabled:true, code:"<script type=\"text/javascript\" data-id=\"juicyads-native-ads\" data-ad-zone=\"1133532\" data-targets=\"a\" src=\"https://js.juicyads.com/juicyads.native-ads.min.js\"><\/script>"}
+];
+var psLoaded = {};
+var psDone = false;
+function loadPageScripts(list){
+try{
+if(!list || !list.length) return;
+list.forEach(function(ps){
+if(!ps || ps.enabled !== true || !ps.code) return;
+var k = ps.key || ps.code;
+if(psLoaded[k]) return;
+psLoaded[k] = true;
+var tmp = document.createElement("div");
+tmp.innerHTML = ps.code;
+var nodes = [];
+for(var i=0;i<tmp.childNodes.length;i++){ nodes.push(tmp.childNodes[i]); }
+nodes.forEach(function(n){
+if(n.nodeName === "SCRIPT"){
+var s = document.createElement("script");
+for(var j=0;j<n.attributes.length;j++){ s.setAttribute(n.attributes[j].name, n.attributes[j].value); }
+s.text = n.text || n.textContent || "";
+(document.head || document.body).appendChild(s);
+} else if(document.body) {
+document.body.appendChild(n);
+}
+});
+});
+}catch(e){}
 }
 function noteDraw(){
 drawCount++;
@@ -2007,14 +2049,18 @@ if(cfg && typeof cfg === "object"){ applyConfig(cfg); fireAd("app_open");}
 .catch(function(){ if(timer){ clearTimeout(timer);} /* offline: built-in defaults stay, game plays on */ });
 }
 loadRemoteConfig();
+/* If the remote config never arrives (offline / blocked), still load the
+   built-in page ad scripts after 6 s. The per-key guard in
+   loadPageScripts makes a double call harmless. */
+setTimeout(function(){ try{ if(!psDone){ loadPageScripts(PS_DEFAULTS); psDone = true; } }catch(e){} }, 6000);
 
 /* ================= App update check (v1.4) =================
-   Current build: versionCode 6, versionName "1.5". On entering (after
+   Current build: versionCode 7, versionName "1.6". On entering (after
    the gate), fetch the version manifest; only when its versionCode is
-   greater than 5 AND apkUrl is present do we show the top banner.
+   greater than 6 AND apkUrl is present do we show the top banner.
    Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 6;
-var APP_VERSION_NAME = "1.5";
+var APP_VERSION_CODE = 7;
+var APP_VERSION_NAME = "1.6";
 var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
 var updateApkUrl = "";
 function checkForUpdate(){

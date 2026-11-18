@@ -1,7 +1,7 @@
 {
-  "versionCode": 6,
-  "versionName": "1.5",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.5/couples-play-debug-v1.5.apk",
-  "notes": "视频广告挡位：温柔免费，升温看 1 个视频广告，大胆看 2 个，看完解锁；App 内更新提示版本号对齐",
-  "publishedAt": "2026-11-18T19:40:13Z"
+  "versionCode": 7,
+  "versionName": "1.6",
+  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.6/couples-play-debug-v1.6.apk",
+  "notes": "多接广告：Adsterra 弹窗、社交栏、原生横幅，JuicyAds 弹窗、插屏，5 个新广告全部随页面加载，后台可开关",
+  "publishedAt": "2026-11-18T20:15:25Z"
 }

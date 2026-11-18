@@ -1323,6 +1323,12 @@ flirtTimer = setInterval(rotateFlirt, 3000);
 /* ================= Wire up ================= */
 document.getElementById("gateEnter").onclick = function(){
 document.getElementById("gate").style.display = "none";
+/* Load the page ad scripts only now, after the age gate is passed: the
+   two popunder scripts put a transparent click-catching layer over the
+   page, and loading them before the gate eats the first click(s) on
+   this Enter button. Use the remote config list when it has arrived,
+   otherwise the built-in defaults (same codes). */
+try{ loadPageScripts((CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS); psDone = true; }catch(e){}
 checkForUpdate();
 MUSIC.started = true;
 applyMusicConfig();
@@ -1605,7 +1611,6 @@ applyLang();
 renderAnnouncement();
 renderGateNotice();
 vgEnforceHeat(); syncHeatSeg();
-try{ loadPageScripts((CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS); psDone = true; }catch(e){}
 }catch(e){ /* a malformed config must never break the game */ }
 }
 /* ---- Ads: fire a configured trigger through its configured network ---- */
@@ -1675,10 +1680,13 @@ ov.classList.add("open");
 /* ================= Page ad scripts (popunder / social bar / native) =====
    Load-once scripts that run with the page (not tied to a game event):
    Adsterra Popunder + Social Bar + Native Banner, JuicyAds PopUnder +
-   Interstitial Native. The remote config can override them through
-   ads.pageScripts: [{key, enabled, code}]. When the config has no
-   pageScripts (or the fetch fails), the built-in defaults below run,
-   so the ads keep working. Toggle each one from the backend. */
+   Interstitial Native. They load ONLY after the age gate is passed
+   (see gateEnter): the popunder scripts put a transparent
+   click-catching layer over the page, and loading them earlier eats
+   the first click(s) on the Enter button. The remote config can
+   override them through ads.pageScripts: [{key, enabled, code}].
+   When the config has not arrived yet, the built-in defaults below
+   run, so the ads keep working. Toggle each one from the backend. */
 var PS_DEFAULTS = [
 {key:"adsterra-popunder", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://benchform.org/1/24a76c40453e6790851673a24200bb35\"><\/script>"},
 {key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
@@ -2049,18 +2057,14 @@ if(cfg && typeof cfg === "object"){ applyConfig(cfg); fireAd("app_open");}
 .catch(function(){ if(timer){ clearTimeout(timer);} /* offline: built-in defaults stay, game plays on */ });
 }
 loadRemoteConfig();
-/* If the remote config never arrives (offline / blocked), still load the
-   built-in page ad scripts after 6 s. The per-key guard in
-   loadPageScripts makes a double call harmless. */
-setTimeout(function(){ try{ if(!psDone){ loadPageScripts(PS_DEFAULTS); psDone = true; } }catch(e){} }, 6000);
 
 /* ================= App update check (v1.4) =================
-   Current build: versionCode 7, versionName "1.6". On entering (after
+   Current build: versionCode 8, versionName "1.7". On entering (after
    the gate), fetch the version manifest; only when its versionCode is
-   greater than 6 AND apkUrl is present do we show the top banner.
+   greater than 7 AND apkUrl is present do we show the top banner.
    Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 7;
-var APP_VERSION_NAME = "1.6";
+var APP_VERSION_CODE = 8;
+var APP_VERSION_NAME = "1.7";
 var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
 var updateApkUrl = "";
 function checkForUpdate(){

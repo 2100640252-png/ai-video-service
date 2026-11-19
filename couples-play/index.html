@@ -1677,21 +1677,22 @@ var closeBtn = document.getElementById("adClose");
 if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad ✕";}
 ov.classList.add("open");
 }
-/* ================= Page ad scripts (popunder / social bar / native) =====
+/* ================= Page ad scripts (social bar / native) ===============
    Load-once scripts that run with the page (not tied to a game event):
-   Adsterra Popunder + Social Bar + Native Banner, JuicyAds PopUnder +
-   Interstitial Native. They load ONLY after the age gate is passed
-   (see gateEnter): the popunder scripts put a transparent
-   click-catching layer over the page, and loading them earlier eats
-   the first click(s) on the Enter button. The remote config can
+   Adsterra Social Bar + Native Banner, JuicyAds Interstitial Native.
+   They load ONLY after the age gate is passed (see gateEnter).
+   REMOVED 2026-11-19 (v1.8): the Adsterra Popunder and JuicyAds
+   PopUnder were taken out — they put a transparent click-catching
+   layer over the page with NO close button, hijacked the current tab
+   to an ad page, and ate the tap that should open a game (a game tile
+   only opened on the 3rd tap, after closing popup tabs). The remaining
+   scripts render in place and never block a tap. The remote config can
    override them through ads.pageScripts: [{key, enabled, code}].
    When the config has not arrived yet, the built-in defaults below
    run, so the ads keep working. Toggle each one from the backend. */
 var PS_DEFAULTS = [
-{key:"adsterra-popunder", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://benchform.org/1/24a76c40453e6790851673a24200bb35\"><\/script>"},
 {key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
 {key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"},
-{key:"juicyads-popunder", enabled:true, code:"<script type=\"text/javascript\" src=\"https://js.juicyads.com/jp.php?c=4474z2w2s294u4r2p2e43384a4&u=https%3A%2F%2Fwww.juicyads.rocks\"><\/script>"},
 {key:"juicyads-interstitial", enabled:true, code:"<script type=\"text/javascript\" data-id=\"juicyads-native-ads\" data-ad-zone=\"1133532\" data-targets=\"a\" src=\"https://js.juicyads.com/juicyads.native-ads.min.js\"><\/script>"}
 ];
 var psLoaded = {};
@@ -2059,12 +2060,12 @@ if(cfg && typeof cfg === "object"){ applyConfig(cfg); fireAd("app_open");}
 loadRemoteConfig();
 
 /* ================= App update check (v1.4) =================
-   Current build: versionCode 8, versionName "1.7". On entering (after
+   Current build: versionCode 9, versionName "1.8". On entering (after
    the gate), fetch the version manifest; only when its versionCode is
-   greater than 7 AND apkUrl is present do we show the top banner.
+   greater than 8 AND apkUrl is present do we show the top banner.
    Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 8;
-var APP_VERSION_NAME = "1.7";
+var APP_VERSION_CODE = 9;
+var APP_VERSION_NAME = "1.8";
 var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
 var updateApkUrl = "";
 function checkForUpdate(){

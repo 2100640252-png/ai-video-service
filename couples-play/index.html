@@ -2281,12 +2281,18 @@ var vgPending = null;
 function vgCheckPending(){
 if(!vgPending){ return; }
 if(typeof document !== "undefined" && document.hidden){ return; }
+var elapsed = Math.floor((Date.now() - vgPending.t0) / 1000);
+if(elapsed < 0){ elapsed = 0; }
+/* Guard: the window focus event can fire right when the ad tab opens,
+   within a second of the click. An evaluation that soon would read
+   ~0s, show "too short" and throw the pending action away before the
+   player ever left. So ignore evaluations under 2s and keep the
+   pending action for the real return. */
+if(elapsed < 2){ return; }
 var pend = vgPending;
 vgPending = null;
 var o = vgGateOpts();
 var threshold = (pend.kind === "download")? o.download : o.browse;
-var elapsed = Math.floor((Date.now() - pend.t0) / 1000);
-if(elapsed < 0){ elapsed = 0; }
 if(elapsed >= threshold){
 vgCountAction(pend.kind);
 } else {

@@ -38,6 +38,12 @@ button{min-height:44px;cursor:pointer}
 #gate .row button{flex:1}
 #gateMsg{color:var(--accent);font-weight:700;margin-top:14px;min-height:1.4em}
 
+/* ---------- Entry notice (third-party ads warning) ---------- */
+#noticeOverlay{position:fixed;inset:0;z-index:100;background:rgba(10,3,5,.97);display:flex;align-items:center;justify-content:center;padding:20px}
+#noticeOverlay .box{background:var(--surface);border:1px solid var(--line);border-radius:18px;max-width:520px;width:100%;padding:32px 28px;text-align:center;box-shadow:var(--shadow)}
+#noticeOverlay h2{font-family:"Noto Serif SC",serif;font-size:21px;line-height:1.55;margin:0 0 22px;color:var(--ink)}
+#noticeBar{margin-top:18px;background:var(--gold-soft);border:1px solid var(--gold);color:var(--ink);border-radius:var(--radius);padding:13px 18px;font-size:14.5px;box-shadow:var(--shadow)}
+
 /* ---------- Header ---------- */
 header.top{padding:30px 0 6px;text-align:center}
 .kicker{letter-spacing:.32em;font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase}
@@ -206,6 +212,8 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #videoGateOverlay .ad-label{font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;margin-bottom:10px}
 #videoGateOverlay h3{font-family:"Noto Serif SC",serif;font-size:19px;margin:0 0 8px}
 #vgProgress{color:var(--ink2);font-size:14px;margin:0 0 12px}
+#vgVideoInfo{color:var(--gold);font-weight:700;font-size:14px;margin:0 0 4px}
+#videoGateOverlay .vg-alt{color:var(--ink2);font-size:13px;margin:0 0 4px}
 #vgVideo{width:100%;max-width:520px;background:#000;border-radius:12px;display:none}
 #vgBarWrap{display:flex;align-items:center;gap:10px;margin-top:12px}
 #vgBar{flex:1;height:8px;background:var(--surface2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
@@ -258,7 +266,7 @@ body.playing #backBar{display:flex}
 #backBtn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;display:inline-flex;align-items:center;gap:8px;min-height:44px}
 #backBtn:hover{border-color:var(--accent)}
 #backBar .gb-title{font-family:"Noto Serif SC",serif;font-weight:900;font-size:17px;color:var(--ink2)}
-body.playing header.top,body.playing .safety,body.playing #stopBanner,body.playing #grid,body.playing footer,body.playing #adBanner,body.playing #announceBar,body.playing #updateBar{display:none!important}
+body.playing header.top,body.playing .safety,body.playing #stopBanner,body.playing #grid,body.playing footer,body.playing #adBanner,body.playing #announceBar,body.playing #noticeBar,body.playing #updateBar{display:none!important}
 body.playing #panel{margin-top:14px}
 .game-flirt{margin-top:10px}
 /* ---------- 3D dice ---------- */
@@ -292,6 +300,16 @@ footer p{margin:0;max-width:760px}
 </style>
 </head>
 <body>
+
+<!-- Entry notice: third-party ads warning. Shown on EVERY page load,
+     above the age gate (z-index 100). The only way past it is tapping
+     "收到" — there is no close button and no back button on purpose. -->
+<div id="noticeOverlay" role="dialog" aria-modal="true" aria-label="提示">
+<div class="box">
+<h2 data-i="noticeTitle">内含第三方广告！如若你正与你的性伴侣准备开始游戏！请先在浴室、房间等独立空间完成任务后在开始游戏！</h2>
+<button class="btn primary" id="noticeAck" data-i="noticeAck">收到</button>
+</div>
+</div>
 
 <!-- Age gate -->
 <div id="gate" role="dialog" aria-modal="true">
@@ -341,6 +359,8 @@ footer p{margin:0;max-width:760px}
 <button class="btn gold" id="refBtn" data-i="refBtn">💰 推广返现</button>
 </div>
 </header>
+
+<div id="noticeBar" role="note"><span data-i="noticeTitle">内含第三方广告！如若你正与你的性伴侣准备开始游戏！请先在浴室、房间等独立空间完成任务后在开始游戏！</span></div>
 
 <div class="safety">
 <span><strong data-i="safeWordK">安全词「红灯」</strong><span data-i="safeWordV">，一喊就停 · 每一张都能跳过</span></span>
@@ -399,7 +419,9 @@ footer p{margin:0;max-width:760px}
 
 <!-- Tier gate: complete ads to unlock heat tier 2 / 3.
      Heat 2 = 1 ad action (watch / download / browse).
-     Heat 3 = 1 download ad + 1 browse ad. Back returns without penalty. -->
+     Heat 3 = (1 download ad + 1 browse ad) OR 5 video ads.
+     Link ads count only after the time threshold on the ad tab.
+     Back returns without penalty. -->
 <div id="videoGateOverlay" role="dialog" aria-modal="true" aria-label="视频广告">
 <div class="vg-box">
 <div class="vg-top"><button class="btn" id="vgBackBtn" data-i="vgBack">← 返回</button></div>
@@ -407,6 +429,8 @@ footer p{margin:0;max-width:760px}
 <h3 id="vgTitle"></h3>
 <p id="vgReq"></p>
 <p id="vgProgress"></p>
+<p id="vgVideoInfo"></p>
+<p id="vgVideoAlt" class="vg-alt"></p>
 <div id="vgActions">
 <button class="btn gold" id="vgVideoBtn" data-i="vgVideoBtn">▶ 看视频广告</button>
 <button class="btn gold" id="vgDlBtn" data-i="vgDlBtn">⬇ 下载广告</button>
@@ -565,14 +589,20 @@ vgTimeLeft:{zh:"还剩 {S} 秒",en:"{S}s left"},
 vgLoading:{zh:"正在加载广告…",en:"Loading ad…"},
 vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
-vgDlBtn:{zh:"⬇ 下载广告",en:"⬇ Download ad"},
-vgBrowseBtn:{zh:"↗ 浏览广告",en:"↗ Browse ad"},
+vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
+vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
 vgReq2:{zh:"看满 1 个广告即可解锁",en:"Complete 1 ad to unlock"},
-vgReq3:{zh:"完成 1 个下载广告 + 1 个浏览广告即可解锁",en:"Complete 1 download ad + 1 browse ad to unlock"},
+vgReq3:{zh:"完成 1 个下载广告 + 1 个浏览广告，或看满 {NEED} 个视频广告，即可解锁",en:"Complete 1 download ad + 1 browse ad, or watch {NEED} video ads, to unlock"},
 vgProg2:{zh:"已完成 {GOT}/1",en:"Done {GOT}/1"},
-vgProg3:{zh:"下载 {DL}/1，浏览 {BR}/1",en:"Download {DL}/1, Browse {BR}/1"},
+vgProg3:{zh:"下载 {DL}/1 · 浏览 {BR}/1 · 视频 {V}/{NEED}",en:"Download {DL}/1 · Browse {BR}/1 · Videos {V}/{NEED}"},
 vgNeedDl:{zh:"还差 1 个下载广告",en:"1 download ad to go"},
 vgNeedBr:{zh:"还差 1 个浏览广告",en:"1 browse ad to go"},
+noticeTitle:{zh:"内含第三方广告！如若你正与你的性伴侣准备开始游戏！请先在浴室、房间等独立空间完成任务后在开始游戏！",en:"Contains third-party ads! If you are about to play with your partner, please finish your task first in a private space such as the bathroom or bedroom before starting the game!"},
+noticeAck:{zh:"收到",en:"Got it"},
+vgShort:{zh:"你只看了 {X} 秒，还差 {Y} 秒，请重新点击广告并看满 {Y} 秒",en:"You only watched {X}s — {Y}s short. Tap the ad again and stay for the full {Y}s"},
+vgVideoCount:{zh:"视频广告 ({GOT}/{NEED})",en:"Video ads ({GOT}/{NEED})"},
+vgVideoAlt:{zh:"不想下载？看满 {NEED} 个视频广告也可解锁大胆",en:"Don't want to download? Watch {NEED} video ads to unlock Bold instead"},
+vgNeedVideos:{zh:"还差 {N} 个视频广告（或 1 个下载广告 + 1 个浏览广告）",en:"{N} more video ad(s) to go (or 1 download ad + 1 browse ad)"},
 refBtn:{zh:"💰 推广返现",en:"💰 Refer & Earn"},
 refTitle:{zh:"推广返现",en:"Refer & Earn"},
 refBack:{zh:"← 返回",en:"← Back"},
@@ -611,6 +641,8 @@ if(typeof renderFbList === "function"){ renderFbList(); updateFbCtx();}
 if(typeof renderAnnouncement === "function"){ renderAnnouncement(); renderGateNotice();}
 if(typeof setFlirtText === "function"){ setFlirtText();}
 if(typeof refRender === "function"){ refRender(); }
+if(typeof vgUpdateBtnLabels === "function"){ vgUpdateBtnLabels(); }
+if(typeof vgUpdateGateText === "function"){ vgUpdateGateText(); }
 renderGrid();
 if(currentGame){ openGame(currentGame, true);}
 }
@@ -1422,6 +1454,12 @@ setFlirtText();
 flirtTimer = setInterval(rotateFlirt, 3000);
 
 /* ================= Wire up ================= */
+/* Entry notice: the player must read the third-party-ads warning and
+   tap "收到" before the age gate underneath becomes reachable. The
+   notice shows on every page load and has no other way past it. */
+document.getElementById("noticeAck").onclick = function(){
+document.getElementById("noticeOverlay").style.display = "none";
+};
 document.getElementById("gateEnter").onclick = function(){
 document.getElementById("gate").style.display = "none";
 /* No page ad scripts load here any more: the game screen shows only the
@@ -1834,20 +1872,29 @@ if(adCloseBtn){ adCloseBtn.onclick = function(){ document.getElementById("adOver
 var adBannerCloseBtn = document.getElementById("adBannerClose");
 if(adBannerCloseBtn){ adBannerCloseBtn.onclick = function(){ var b = document.getElementById("adBanner"); if(b){ b.classList.remove("open");} var s = document.getElementById("adBannerSlot"); if(s){ s.innerHTML = ""; } };}
 
-/* ================= Tier gate: complete ads to unlock heat 2 / 3 ================
+/* ================= Tier gate v3: time-verified ads + 3 unlock paths ========
    Heat 2 (升温) unlocks after 1 completed ad action (watch a video, or
    open a download ad, or open a browse ad). Heat 3 (大胆) unlocks after
-   1 download ad AND 1 browse ad. Progress persists per device in
-   localStorage ("cp_gate_progress" = {browse:0/1, download:0/1}).
+   (1 download ad AND 1 browse ad) OR (5 completed video ads).
+   Progress persists per device in localStorage
+   ("cp_gate_progress" = {browse:0/1, download:0/1, videos:0..5}).
    Migration: the old store ("cp_video_unlocks", watched video count)
    seeds browse=1 when watched>=1; download is never granted by videos.
+   TIME VERIFICATION: a browse/download click counts for NOTHING on its
+   own. It only starts a pending action; the action counts when the
+   player comes back to this tab after spending >= the threshold on the
+   ad (browse 30s, download 60s — ads.gate.timeThresholds in the config).
+   The video path is verified by the player itself (no controls, seeking
+   resets, count only when the video ends).
    The gate is active ONLY when the remote config sets
    ads.videoGate = {enabled:true, vastTag:"<http(s) URL>", required:{"2":1,"3":2}}.
    Without it (or with an empty tag), tiers stay free exactly as before.
    The video is a minimal VAST player: fetch the tag, follow Wrapper
    redirects (max 3), play the best MP4, fire impression / quartile /
    complete beacons, count the watch only when the video ends. No skip
-   button; seeking is reset; closing gives up without counting.
+   button; seeking is reset; closing gives up without counting. VAST tags
+   are tried IN ORDER from ads.videoGate.vastTags (first tag = the old
+   single vastTag); an empty/invalid tag falls through to the next one.
    Back (← 返回) and Close (✕) return to the game without unlocking and
    without penalty. The page scripts (Social Bar, Native Banner,
    Interstitial) load inside the gate when it opens. Popunders are
@@ -1855,7 +1902,7 @@ if(adBannerCloseBtn){ adBannerCloseBtn.onclick = function(){ var b = document.ge
 var VG_STORE_KEY = "cp_video_unlocks";
 var VG_PROG_KEY = "cp_gate_progress";
 var vgWatchedMem = 0;
-var vgProgMem = {browse: 0, download: 0};
+var vgProgMem = {browse: 0, download: 0, videos: 0};
 var vgLsOk = false;
 try{ localStorage.setItem("__cp_vg_test__", "1"); localStorage.removeItem("__cp_vg_test__"); vgLsOk = true; }catch(e){ vgLsOk = false; }
 function vgWatched(){
@@ -1869,7 +1916,7 @@ function vgMigrateProg(){
    counts as a browse action. Download is never granted by videos. */
 var w = 0;
 try{ w = vgWatched(); }catch(e){ w = 0; }
-var p = {browse: (w >= 1)? 1: 0, download: 0};
+var p = {browse: (w >= 1)? 1: 0, download: 0, videos: 0};
 vgProgMem = p;
 if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(p)); }catch(e){} }
 return p;
@@ -1880,17 +1927,20 @@ try{
 var raw = localStorage.getItem(VG_PROG_KEY);
 if(raw){
 var o = JSON.parse(raw);
-var p = {browse: (o && o.browse)? 1: 0, download: (o && o.download)? 1: 0};
+var v = parseInt(o && o.videos, 10); if(isNaN(v) || v < 0) v = 0;
+var p = {browse: (o && o.browse)? 1: 0, download: (o && o.download)? 1: 0, videos: v};
 vgProgMem = p;
 return p;
 }
 } catch(e){}
 return vgMigrateProg();
 }
-return vgProgMem;
+if(vgProgMem && typeof vgProgMem.browse !== "undefined"){ return vgProgMem; }
+return {browse: 0, download: 0, videos: 0};
 }
 function vgSetProg(p){
-vgProgMem = {browse: p.browse? 1: 0, download: p.download? 1: 0};
+var v = parseInt(p.videos, 10); if(isNaN(v) || v < 0) v = 0;
+vgProgMem = {browse: p.browse? 1: 0, download: p.download? 1: 0, videos: v};
 if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(vgProgMem)); }catch(e){} }
 }
 /* Built-in fallback: the gate must never silently vanish because the remote
@@ -1898,21 +1948,55 @@ if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(vgProgMem)); }
    remote config carries ads.videoGate it overrides this; only an explicit
    enabled:false in the config turns the gate off. */
 var VG_DEFAULT_TAG = "https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dlinear&correlator=";
+/* Google IMA TEST tags (no revenue, tiny inventory, frequency-capped).
+   They exist only so the 5-video path has more than one tag to fall back
+   to. Real paid inventory needs a real network VAST tag (HilltopAds /
+   Adsterra) added to ads.videoGate.vastTags later. NOTE: the first tag
+   is already sample_ct=linear, so a second linear tag would be the
+   identical URL and could never fill when the first one does not — the
+   fallbacks below are skippablelinear and redirectlinear instead. */
+var VG_DEFAULT_TAGS = [
+"https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dlinear&correlator=",
+"https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dskippablelinear&correlator=",
+"https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dredirectlinear&correlator="
+];
+/* Gate v3 options from ads.gate in the remote config. Built-in fallbacks
+   (browse 30s, download 60s, 5 videos for Bold) keep the gate working
+   when the config fetch fails or the fields are missing. */
+function vgGateOpts(){
+var g = (CFG && CFG.ads && CFG.ads.gate) ? CFG.ads.gate : null;
+var th = (g && g.timeThresholds) ? g.timeThresholds : null;
+var br = th? parseInt(th.browse, 10): NaN; if(isNaN(br) || br < 0) br = 30;
+var dl = th? parseInt(th.download, 10): NaN; if(isNaN(dl) || dl < 0) dl = 60;
+var vn = g? parseInt(g.videosForBold, 10): NaN; if(isNaN(vn) || vn < 1) vn = 5;
+return {browse: br, download: dl, videosForBold: vn};
+}
+function vgVideosNeeded(){ return vgGateOpts().videosForBold; }
 function vgGateCfg(){
 var g = (CFG && CFG.ads && CFG.ads.videoGate) ? CFG.ads.videoGate : null;
-if(!g){ return {tag: VG_DEFAULT_TAG, r2: 1, r3: 2}; }
+if(!g){ return {tag: VG_DEFAULT_TAG, tags: VG_DEFAULT_TAGS.slice(), r2: 1, r3: 2}; }
 if(g.enabled !== true) return null;
+var tags = [];
+if(g.vastTags && g.vastTags.length){
+for(var i=0;i<g.vastTags.length;i++){
+var u = (typeof g.vastTags[i] === "string")? g.vastTags[i].replace(/^\s+|\s+$/g, ""): "";
+if(/^https?:\/\//i.test(u)){ tags.push(u); }
+}
+}
+if(!tags.length){
 var tag = (typeof g.vastTag === "string")? g.vastTag.replace(/^\s+|\s+$/g, ""): "";
-if(!/^https?:\/\//i.test(tag)) return {tag: VG_DEFAULT_TAG, r2: 1, r3: 2};
+if(/^https?:\/\//i.test(tag)){ tags.push(tag); }
+}
+if(!tags.length){ return {tag: VG_DEFAULT_TAG, tags: VG_DEFAULT_TAGS.slice(), r2: 1, r3: 2}; }
 var r2 = parseInt(g.required && g.required["2"], 10); if(isNaN(r2) || r2 < 0) r2 = 1;
 var r3 = parseInt(g.required && g.required["3"], 10); if(isNaN(r3) || r3 < 0) r3 = 2;
-return {tag: tag, r2: r2, r3: r3};
+return {tag: tags[0], tags: tags, r2: r2, r3: r3};
 }
 function vgIsUnlocked(heat){
 if(heat <= 1) return true;
 var p = vgProg();
 if(heat === 2) return (p.browse >= 1 || p.download >= 1);
-if(heat === 3) return (p.browse >= 1 && p.download >= 1);
+if(heat === 3) return (p.browse >= 1 && p.download >= 1) || (p.videos >= vgVideosNeeded());
 return false;
 }
 function vgEnforceHeat(){
@@ -2024,17 +2108,31 @@ var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
 var title = document.getElementById("vgTitle");
 if(title){ title.textContent = t("vgTitle").replace("{TIER}", tierName); }
 var req = document.getElementById("vgReq");
-if(req){ req.textContent = (vgTargetHeat === 3)? t("vgReq3"): t("vgReq2"); }
-var p = vgProg();
+if(req){ req.textContent = (vgTargetHeat === 3)? t("vgReq3").split("{NEED}").join(String(vgVideosNeeded())): t("vgReq2"); }
+var p = vgProg() || {browse: 0, download: 0, videos: 0};
 var pr = document.getElementById("vgProgress");
 if(pr){
 if(vgTargetHeat === 3){
-pr.textContent = t("vgProg3").split("{DL}").join(String(p.download)).split("{BR}").join(String(p.browse));
+pr.textContent = t("vgProg3").split("{DL}").join(String(p.download)).split("{BR}").join(String(p.browse)).split("{V}").join(String(p.videos)).split("{NEED}").join(String(vgVideosNeeded()));
 } else {
 var got = (p.browse || p.download)? 1: 0;
 pr.textContent = t("vgProg2").split("{GOT}").join(String(got));
 }
 }
+var vi = document.getElementById("vgVideoInfo");
+if(vi){ vi.textContent = t("vgVideoCount").split("{GOT}").join(String(p.videos)).split("{NEED}").join(String(vgVideosNeeded())); }
+var va = document.getElementById("vgVideoAlt");
+if(va){ va.textContent = (vgTargetHeat === 3)? t("vgVideoAlt").split("{NEED}").join(String(vgVideosNeeded())): ""; }
+}
+/* Gate action-button labels carry the time rule from the config
+   (defaults: browse 30s, download 60s). Called from applyLang and
+   after the remote config loads, so the numbers always match. */
+function vgUpdateBtnLabels(){
+var o = vgGateOpts();
+var d = document.getElementById("vgDlBtn");
+if(d){ d.textContent = t("vgDlBtn").split("{S}").join(String(o.download)); }
+var b = document.getElementById("vgBrowseBtn");
+if(b){ b.textContent = t("vgBrowseBtn").split("{S}").join(String(o.browse)); }
 }
 function vgShowState(st){
 var v = document.getElementById("vgVideo");
@@ -2096,9 +2194,14 @@ vgSetMsg(t("vgLoading"));
 var tm1 = document.getElementById("vgTime"); if(tm1){ tm1.textContent = ""; }
 var fl1 = document.getElementById("vgBarFill"); if(fl1){ fl1.style.width = "0%"; }
 vgShowState("loading");
-vgFetchVast(g.tag, 0, function(ad){
+var tags = (g.tags && g.tags.length)? g.tags : [g.tag];
+vgTryTags(tags, 0, seq);
+}
+function vgTryTags(tags, idx, seq){
+if(idx >= tags.length){ vgShowNoAd(); return; }
+vgFetchVast(tags[idx], 0, function(ad){
 if(seq !== vgVideoSeq){ return; }
-if(!ad){ vgShowNoAd(); return; }
+if(!ad){ vgTryTags(tags, idx + 1, seq); return; }
 vgAd = ad;
 vgImpressionFired = false;
 vgFiredQ = {};
@@ -2117,21 +2220,30 @@ if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
 function vgOnEnded(){
 if(!vgTargetHeat){ return; }
 vgFire(vgAd? vgAd.tracking.complete: null);
+/* Video path: each completed video also banks one video toward the
+   Bold unlock (capped at videosForBold). The browse action below is
+   unchanged — a completed video still counts as 1 browse action. */
+var p = vgProg();
+var need = vgVideosNeeded();
+if(p.videos < need){ p.videos = p.videos + 1; vgSetProg(p); }
 vgCountAction("browse");
 }
-/* Count one completed ad action ("browse" or "download") toward the
-   target tier. A watched video counts as browse; the Download button
-   counts as download; the Browse button counts as browse. When the
-   target tier's requirements are met, unlock it exactly like the old
-   video gate did, then close the gate. Otherwise show what is still
-   missing and return to the action buttons so the user can pick another
-   ad source. */
+/* Count one VERIFIED ad action ("browse" or "download") toward the
+   target tier. A watched video counts as browse (and banks one video
+   toward the 5-video Bold path — see vgOnEnded); a time-verified
+   Download click counts as download; a time-verified Browse click
+   counts as browse. When the target tier's requirements are met,
+   unlock it exactly like the old video gate did, then close the gate.
+   Otherwise show what is still missing and return to the action
+   buttons so the user can pick another ad source. If the gate was
+   closed while the player was on the ad tab, the verified action is
+   still banked in localStorage — only the UI update is skipped. */
 function vgCountAction(kind){
-if(!vgTargetHeat){ return; }
 var p = vgProg();
 if(kind === "browse"){ p.browse = 1; }
 if(kind === "download"){ p.download = 1; }
 vgSetProg(p);
+if(!vgTargetHeat){ return; }
 vgUpdateGateText();
 if(vgIsUnlocked(vgTargetHeat)){
 var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
@@ -2149,7 +2261,8 @@ if(h === 3){ try{ refReportUnlock(); }catch(e){} }
 } else {
 var miss = "";
 if(vgTargetHeat === 3){
-if(!p.download){ miss = t("vgNeedDl"); }
+if(p.videos >= 1 && p.videos < vgVideosNeeded() && !p.download && !p.browse){ miss = t("vgNeedVideos").replace("{N}", String(vgVideosNeeded() - p.videos)); }
+else if(!p.download){ miss = t("vgNeedDl"); }
 else if(!p.browse){ miss = t("vgNeedBr"); }
 }
 vgSetMsg(miss);
@@ -2157,8 +2270,37 @@ vgShowState("actions");
 }
 }
 /* Download / browse link ads: open the network's zoneCode in a new tab.
-   The click (new tab opens) counts as the action. The actual install /
-   view is tracked by the ad network, not by this page. */
+   The click counts for NOTHING — it only starts a pending action. The
+   action counts only when the player comes back to this tab after
+   spending >= the threshold on the ad (browse 30s, download 60s —
+   ads.gate.timeThresholds). Too short a stay shows how many seconds
+   were actually spent and how many are still missing, and the player
+   must click the ad button again. The actual install / view is tracked
+   by the ad network, not by this page. */
+var vgPending = null;
+function vgCheckPending(){
+if(!vgPending){ return; }
+if(typeof document !== "undefined" && document.hidden){ return; }
+var pend = vgPending;
+vgPending = null;
+var o = vgGateOpts();
+var threshold = (pend.kind === "download")? o.download : o.browse;
+var elapsed = Math.floor((Date.now() - pend.t0) / 1000);
+if(elapsed < 0){ elapsed = 0; }
+if(elapsed >= threshold){
+vgCountAction(pend.kind);
+} else {
+var need = threshold - elapsed;
+vgSetMsg(t("vgShort").split("{X}").join(String(elapsed)).split("{Y}").join(String(need)));
+if(vgTargetHeat){ vgShowState("actions"); }
+}
+}
+if(typeof document !== "undefined" && document.addEventListener){
+document.addEventListener("visibilitychange", function(){ if(!document.hidden){ vgCheckPending(); } });
+}
+if(typeof window !== "undefined" && window.addEventListener){
+window.addEventListener("focus", function(){ vgCheckPending(); });
+}
 var VG_DL_FALLBACK = "https://auctionr.org/4/773766fc6c76e8a6733c6d7e1ef22bce";
 var VG_BR_FALLBACK = "https://ashamed-employer.com/sOkLSm";
 function vgNetZoneCode(key, fallback){
@@ -2176,8 +2318,9 @@ vgVideoSeq++;
 var v = document.getElementById("vgVideo");
 if(v){ try{ v.pause(); }catch(e){} }
 var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgNetZoneCode("hilltopads", VG_BR_FALLBACK);
+vgPending = {kind: kind, t0: Date.now()};
 try{ window.open(url, "_blank"); }catch(e){}
-vgCountAction(kind);
+vgSetMsg("");
 }
 /* Load the page scripts inside the tier gate (Social Bar, Native
    Banner, Interstitial). The psLoaded guard makes this once per

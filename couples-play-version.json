@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.7",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.7/couples-play-debug-v1.7.apk",
-  "notes": "修了一个毛病：弹窗广告之前在年龄确认页就加载，会挡住确认按钮点不进去，现在改成进了游戏才加载",
-  "publishedAt": "2026-11-19T15:11:29Z"
+  "versionCode": 9,
+  "versionName": "1.8",
+  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.8/couples-play-debug-v1.8.apk",
+  "notes": "拿掉了两个弹窗广告：它们没有取消按钮，会把页面直接跳走，还挡住游戏打不开。现在游戏点一下就开，广告只留在该在的位置",
+  "publishedAt": "2026-11-19T17:07:36Z"
 }

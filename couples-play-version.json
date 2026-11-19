@@ -1,7 +1,1 @@
-{
-  "versionCode": 10,
-  "versionName": "1.9",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v1.9/couples-play-debug-v1.9.apk",
-  "notes": "弹窗广告回来了，但换了位置：进游戏、玩一轮都不受影响，打完一轮才出弹窗，游戏点一下就开",
-  "publishedAt": "2026-11-19T17:18:40Z"
-}
+{"apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.0/couples-play-debug-v2.0.apk","notes":"挡位新版：升温看满1个广告，大胆=1个下载+1个浏览；挡位里加了返回按钮；弹窗广告已移除，游戏点一下就开。新增推广返现：注册后拿邀请码，邀请好友开大胆得5美金。","publishedAt":"2026-11-19T18:30:00Z","versionCode":11,"versionName":"2.0"}

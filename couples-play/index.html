@@ -220,6 +220,25 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #vgActions .btn{margin:6px 6px 0}
 #vgNativeSlot{margin-top:12px}
 #vgNativeSlot iframe,#vgNativeSlot img{max-width:100%}
+/* ---------- Referral (推广返现) ---------- */
+#refOverlay{position:fixed;inset:0;z-index:90;background:rgba(8,1,4,.92);display:none;align-items:center;justify-content:center;padding:20px}
+#refOverlay.open{display:flex}
+#refOverlay .ref-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:100%;max-width:520px;padding:18px;box-shadow:var(--shadow);text-align:center}
+#refOverlay .ad-label{font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;margin-bottom:10px}
+#refOverlay h3{font-family:"Noto Serif SC",serif;font-size:19px;margin:0 0 8px}
+#refOverlay .btn{margin:12px 6px 0}
+#refOverlay .ref-top{text-align:left;margin-bottom:4px}
+#refOverlay .ref-top .btn{margin:0}
+.ref-field{text-align:left;margin:10px 0}
+.ref-field label{display:block;font-size:13px;color:var(--ink2);margin-bottom:4px;font-weight:700}
+.ref-field input{width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:15px}
+.ref-msg{color:var(--gold);font-weight:700;min-height:1.5em;margin:8px 0 0}
+.ref-switch{margin:10px 0 0;font-size:14px}
+.ref-switch a{color:var(--gold)}
+.ref-terms{color:var(--ink);font-size:14px;margin:8px 0;line-height:1.6}
+.ref-stats{color:var(--ink2);font-size:14px;margin:8px 0}
+.ref-code{font-size:26px;font-weight:700;letter-spacing:.18em;color:var(--gold);margin:8px 0}
+.ref-share{color:var(--ink2);font-size:13px;margin:8px 0;line-height:1.5}
 #heatSeg button.locked::after,#gameHeatSeg button.locked::after{content:" \1F512"}
 #adBanner{display:none;margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);text-align:center}
 #adBanner.open{display:block}
@@ -319,6 +338,7 @@ footer p{margin:0;max-width:760px}
 <button data-heat="2" class="on" data-i="heat2">升温 Medium</button>
 <button data-heat="3" data-i="heat3">大胆 Spicy</button>
 </div>
+<button class="btn gold" id="refBtn" data-i="refBtn">💰 推广返现</button>
 </div>
 </header>
 
@@ -399,6 +419,34 @@ footer p{margin:0;max-width:760px}
 <button class="btn" id="vgRetryBtn" data-i="vgRetry" style="display:none">重试</button>
 <button class="btn" id="vgCloseBtn" data-i="vgClose">关闭 ✕</button>
 <div id="vgNativeSlot"><div id="container-0925149469bb04c106e214f794268087"></div></div>
+</div>
+</div>
+
+<!-- Referral (推广返现): register to get your invite code, invite friends,
+     earn $5 each time one of them unlocks the Bold tier. Closes freely. -->
+<div id="refOverlay" role="dialog" aria-modal="true" aria-label="推广返现">
+<div class="ref-box">
+<div class="ref-top"><button class="btn" id="refBackBtn" data-i="refBack">← 返回</button></div>
+<div class="ad-label">推广返现 · REFER &amp; EARN</div>
+<h3 data-i="refTitle">推广返现</h3>
+<p id="refMsg" class="ref-msg"></p>
+<div id="refAuth">
+<div class="ref-field"><label for="refUser" data-i="refUserLabel">用户名</label><input id="refUser" type="text" autocomplete="username" maxlength="20"></div>
+<div class="ref-field"><label for="refPass" data-i="refPassLabel">密码</label><input id="refPass" type="password" autocomplete="new-password" maxlength="64"></div>
+<div class="ref-field" id="refInviteWrap"><label for="refInvite" data-i="refInviteLabel">邀请码（选填）</label><input id="refInvite" type="text" autocomplete="off" maxlength="12" placeholder="CP······"></div>
+<button class="btn gold" id="refSubmitBtn">注册</button>
+<p class="ref-switch"><a href="#" id="refSwitchLink">已有账号？登录</a></p>
+</div>
+<div id="refRewards" style="display:none">
+<p class="ref-terms" data-i="refTerms">邀请好友注册，好友解锁大胆挡位后，你得 5 美金。邀请 5 个人，最高得 25 美金。</p>
+<p class="ref-stats" id="refStats"></p>
+<div class="ref-code" id="refMyCode"></div>
+<button class="btn" id="refCopyBtn" data-i="refCopy">复制邀请码</button>
+<p class="ref-share" id="refShareText"></p>
+<a class="btn gold" id="refDlBtn" href="https://github.com/2100640252-png/ai-video-service/releases/latest" target="_blank" rel="noopener" data-i="refDownload">下载 App</a>
+<button class="btn" id="refLogoutBtn" data-i="refLogout">退出登录</button>
+</div>
+<button class="btn" id="refCloseBtn" data-i="refClose">关闭 ✕</button>
 </div>
 </div>
 
@@ -525,6 +573,32 @@ vgProg2:{zh:"已完成 {GOT}/1",en:"Done {GOT}/1"},
 vgProg3:{zh:"下载 {DL}/1，浏览 {BR}/1",en:"Download {DL}/1, Browse {BR}/1"},
 vgNeedDl:{zh:"还差 1 个下载广告",en:"1 download ad to go"},
 vgNeedBr:{zh:"还差 1 个浏览广告",en:"1 browse ad to go"},
+refBtn:{zh:"💰 推广返现",en:"💰 Refer & Earn"},
+refTitle:{zh:"推广返现",en:"Refer & Earn"},
+refBack:{zh:"← 返回",en:"← Back"},
+refClose:{zh:"关闭 ✕",en:"Close ✕"},
+refTerms:{zh:"邀请好友注册，好友解锁大胆挡位后，你得 5 美金。邀请 5 个人，最高得 25 美金。",en:"Invite a friend to register. When they unlock the Bold tier, you earn $5. Invite 5 people and earn up to $25."},
+refStats:{zh:"已邀请 {INV} 人 · {BOLD} 人开了大胆 · 已赚 ${EARN}",en:"Invited {INV} · {BOLD} unlocked Bold · Earned ${EARN}"},
+refUserLabel:{zh:"用户名",en:"Username"},
+refPassLabel:{zh:"密码",en:"Password"},
+refInviteLabel:{zh:"邀请码（选填）",en:"Invite code (optional)"},
+refRegister:{zh:"注册",en:"Register"},
+refLogin:{zh:"登录",en:"Log in"},
+refToLogin:{zh:"已有账号？登录",en:"Already have an account? Log in"},
+refToRegister:{zh:"没有账号？注册",en:"No account yet? Register"},
+refDownload:{zh:"下载 App",en:"Download the App"},
+refCopy:{zh:"复制邀请码",en:"Copy invite code"},
+refCopied:{zh:"已复制邀请码",en:"Invite code copied"},
+refLogout:{zh:"退出登录",en:"Log out"},
+refShare:{zh:"我在玩情侣情趣游戏，用我的邀请码 {CODE} 注册，解锁大胆挡位我们都能赚钱！",en:"I'm playing Couples Play — register with my invite code {CODE}. When you unlock the Bold tier, we both earn!"},
+refWorking:{zh:"处理中…",en:"Working…"},
+refErrUser:{zh:"用户名 2–20 个字符，只能用中文、字母或数字",en:"Username must be 2–20 characters: Chinese, letters or digits only"},
+refErrPass:{zh:"密码至少 6 位",en:"Password must be at least 6 characters"},
+refErrInvite:{zh:"邀请码不存在",en:"That invite code doesn't exist"},
+refErrTaken:{zh:"用户名已被注册，换一个试试",en:"That username is taken — try another"},
+refErrLogin:{zh:"用户名或密码不对",en:"Wrong username or password"},
+refErrLoginEmpty:{zh:"请输入用户名和密码",en:"Enter your username and password"},
+refErrNet:{zh:"网络出了点问题，请稍后再试",en:"Network problem — please try again"},
 };
 function t(k){ return I[k]? I[k][LANG]: k;}
 function applyLang(){
@@ -536,6 +610,7 @@ for(var j=0;j<phs.length;j++){ phs[j].setAttribute("placeholder", t(phs[j].getAt
 if(typeof renderFbList === "function"){ renderFbList(); updateFbCtx();}
 if(typeof renderAnnouncement === "function"){ renderAnnouncement(); renderGateNotice();}
 if(typeof setFlirtText === "function"){ setFlirtText();}
+if(typeof refRender === "function"){ refRender(); }
 renderGrid();
 if(currentGame){ openGame(currentGame, true);}
 }
@@ -2067,6 +2142,9 @@ vgCloseGate();
 HEAT = h;
 syncHeatSeg();
 if(currentGame){ openGame(currentGame, true); }
+/* Referral: report a Bold (tier 3) unlock to Supabase so the
+   inviter can be credited. Best-effort, never blocks the game. */
+if(h === 3){ try{ refReportUnlock(); }catch(e){} }
 }, 900);
 } else {
 var miss = "";
@@ -2175,6 +2253,228 @@ var p = null;
 try{ p = v.play(); }catch(e){ p = null; }
 if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
 }; }
+
+/* ================= Referral (推广返现) via Supabase =================
+   Backend: Supabase project "couples-play" (Singapore). RLS is OFF and
+   the anon key is public by design for Supabase client use. Passwords
+   are SHA-256 hashed client-side (username + ":" + password) before
+   sending; the plain password never leaves the device. If Web Crypto
+   is unavailable (non-secure context), a simple string hash is used
+   instead — same algorithm on both register and login, so they match.
+   Unlock reporting is best-effort and never blocks the game. */
+var REF_SUPA_URL = "https://mopqrwrsjzhnaglywbma.supabase.co";
+var REF_SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vcHFyd3JzanpobmFnbHl3Ym1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDQ4NzYsImV4cCI6MjExMDY4MDg3Nn0.3EGvUmTA4noYO6vvmELsVpT-f2k52Dlx01nXJAMcJC0";
+var REF_SESSION_KEY = "cp_ref_session";
+var refMode = "register";
+function refSession(){
+try{ var s = localStorage.getItem(REF_SESSION_KEY); return s? JSON.parse(s): null; }catch(e){ return null; }
+}
+function refSaveSession(s){ try{ localStorage.setItem(REF_SESSION_KEY, JSON.stringify(s)); }catch(e){} }
+function refClearSession(){ try{ localStorage.removeItem(REF_SESSION_KEY); }catch(e){} }
+function refSetMsg(s){ var el = document.getElementById("refMsg"); if(el){ el.textContent = s || ""; } }
+function refApi(path, method, body){
+if(typeof fetch !== "function"){ return Promise.reject(new Error("no fetch")); }
+var headers = {"apikey": REF_SUPA_KEY, "Authorization": "Bearer " + REF_SUPA_KEY, "Content-Type": "application/json"};
+if(method === "POST"){ headers["Prefer"] = "return=representation"; }
+var opts = {method: method || "GET", headers: headers};
+if(body){ opts.body = JSON.stringify(body); }
+return fetch(REF_SUPA_URL + "/rest/v1/" + path, opts).then(function(r){
+if(!r.ok){ var err = new Error("supabase " + r.status); err.status = r.status; throw err; }
+return r.json();
+});
+}
+function refSimpleHash(s){
+var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+for(var i=0;i<s.length;i++){ var ch = s.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+var a = (h2>>>0).toString(16); while(a.length < 8){ a = "0" + a; }
+var b = (h1>>>0).toString(16); while(b.length < 8){ b = "0" + b; }
+return a + b;
+}
+function refHashPw(username, password){
+var input = username + ":" + password;
+function hex(buf){
+var bytes = new Uint8Array(buf);
+var out = "";
+for(var i=0;i<bytes.length;i++){ var h = bytes[i].toString(16); out += (h.length === 1? "0" + h: h); }
+return out;
+}
+if(window.crypto && crypto.subtle && crypto.subtle.digest && typeof TextEncoder !== "undefined"){
+var data = new TextEncoder().encode(input);
+return crypto.subtle.digest("SHA-256", data).then(function(buf){ return hex(buf); }).catch(function(){ return refSimpleHash(input); });
+}
+return Promise.resolve(refSimpleHash(input));
+}
+function refGenCode(){
+var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+var out = "CP";
+for(var i=0;i<6;i++){ out += chars.charAt(Math.floor(Math.random()*chars.length)); }
+return out;
+}
+function refShowAuth(){
+var auth = document.getElementById("refAuth"); if(auth){ auth.style.display = "block"; }
+var rw = document.getElementById("refRewards"); if(rw){ rw.style.display = "none"; }
+var inv = document.getElementById("refInviteWrap"); if(inv){ inv.style.display = (refMode === "login")? "none": "block"; }
+var sub = document.getElementById("refSubmitBtn"); if(sub){ sub.textContent = (refMode === "login")? t("refLogin"): t("refRegister"); }
+var sw = document.getElementById("refSwitchLink"); if(sw){ sw.textContent = (refMode === "login")? t("refToRegister"): t("refToLogin"); }
+}
+function refLoadStats(){
+var s = refSession();
+var el = document.getElementById("refStats");
+if(!s || !el) return;
+var invited = 0;
+refApi("users?invited_by=eq." + encodeURIComponent(s.user_id) + "&select=id", "GET").then(function(rows){
+invited = (rows || []).length;
+return refApi("referrals?inviter_id=eq." + encodeURIComponent(s.user_id) + "&select=id,reward_usd", "GET");
+}).then(function(rows){
+var list = rows || [];
+var bold = list.length;
+var earned = 0;
+for(var i=0;i<list.length;i++){ earned += parseFloat(list[i].reward_usd) || 0; }
+var earnStr = (earned % 1 === 0)? String(earned): earned.toFixed(2);
+el.textContent = t("refStats").split("{INV}").join(String(invited)).split("{BOLD}").join(String(bold)).split("{EARN}").join(earnStr);
+}).catch(function(){ el.textContent = ""; });
+}
+function refShowRewards(){
+var auth = document.getElementById("refAuth"); if(auth){ auth.style.display = "none"; }
+var rw = document.getElementById("refRewards"); if(rw){ rw.style.display = "block"; }
+var s = refSession();
+var codeEl = document.getElementById("refMyCode"); if(codeEl){ codeEl.textContent = s? s.invite_code: ""; }
+var shareEl = document.getElementById("refShareText"); if(shareEl){ shareEl.textContent = s? t("refShare").split("{CODE}").join(s.invite_code): ""; }
+refLoadStats();
+}
+function refRender(){
+var ov = document.getElementById("refOverlay");
+if(!ov || !ov.classList.contains("open")){ return; }
+var s = refSession();
+if(s){ refShowRewards(); } else { refShowAuth(); }
+}
+function refOpen(){
+var ov = document.getElementById("refOverlay");
+if(ov){ ov.classList.add("open"); }
+refRender();
+}
+function refClose(){
+var ov = document.getElementById("refOverlay");
+if(ov){ ov.classList.remove("open"); }
+}
+function refInsertUser(payload, tried){
+return refApi("users", "POST", payload).catch(function(err){
+if(err && err.status === 409 && !tried){
+payload.invite_code = refGenCode();
+return refInsertUser(payload, true);
+}
+throw err;
+});
+}
+function refDoRegister(){
+var userEl = document.getElementById("refUser");
+var passEl = document.getElementById("refPass");
+var invEl = document.getElementById("refInvite");
+var user = userEl? (userEl.value || "").replace(/^\s+|\s+$/g, ""): "";
+var pass = passEl? (passEl.value || ""): "";
+var inv = invEl? (invEl.value || "").replace(/^\s+|\s+$/g, "").toUpperCase(): "";
+if(user.length < 2 || user.length > 20 || !/^[\u4e00-\u9fa5A-Za-z0-9]+$/.test(user)){ refSetMsg(t("refErrUser")); return; }
+if(pass.length < 6){ refSetMsg(t("refErrPass")); return; }
+refSetMsg(t("refWorking"));
+var inviterId = null;
+var chain = Promise.resolve();
+if(inv){
+chain = chain.then(function(){
+return refApi("users?invite_code=eq." + encodeURIComponent(inv) + "&select=id", "GET");
+}).then(function(rows){
+if(!rows || !rows.length){ throw new Error("badinvite"); }
+inviterId = rows[0].id;
+});
+}
+chain.then(function(){ return refHashPw(user, pass); }).then(function(hash){
+var payload = {username: user, password_hash: hash, invite_code: refGenCode(), invited_by: inviterId};
+return refInsertUser(payload, false);
+}).then(function(rows){
+var me = (rows && rows[0]) || null;
+if(!me || !me.id){ throw new Error("noid"); }
+refSaveSession({user_id: me.id, username: me.username, invite_code: me.invite_code});
+refSetMsg("");
+refRender();
+}).catch(function(err){
+if(err && err.message === "badinvite"){ refSetMsg(t("refErrInvite")); return; }
+if(err && err.status === 409){ refSetMsg(t("refErrTaken")); return; }
+refSetMsg(t("refErrNet"));
+});
+}
+function refDoLogin(){
+var userEl = document.getElementById("refUser");
+var passEl = document.getElementById("refPass");
+var user = userEl? (userEl.value || "").replace(/^\s+|\s+$/g, ""): "";
+var pass = passEl? (passEl.value || ""): "";
+if(!user || !pass){ refSetMsg(t("refErrLoginEmpty")); return; }
+refSetMsg(t("refWorking"));
+refApi("users?username=eq." + encodeURIComponent(user) + "&select=id,password_hash,invite_code", "GET").then(function(rows){
+if(!rows || !rows.length){ refSetMsg(t("refErrLogin")); return; }
+var row = rows[0];
+return refHashPw(user, pass).then(function(hash){
+if(hash === row.password_hash){
+refSaveSession({user_id: row.id, username: user, invite_code: row.invite_code});
+refSetMsg("");
+refRender();
+} else {
+refSetMsg(t("refErrLogin"));
+}
+});
+}).catch(function(){ refSetMsg(t("refErrNet")); });
+}
+function refCopyFallback(text){
+try{
+var ta = document.createElement("textarea");
+ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+document.body.appendChild(ta); ta.select();
+document.execCommand("copy");
+document.body.removeChild(ta);
+}catch(e){}
+}
+function refCopyCode(){
+var s = refSession(); if(!s) return;
+var code = s.invite_code;
+function done(){ refSetMsg(t("refCopied")); }
+if(navigator.clipboard && navigator.clipboard.writeText){
+navigator.clipboard.writeText(code).then(done, function(){ refCopyFallback(code); done(); });
+} else {
+refCopyFallback(code); done();
+}
+}
+/* Report a Bold (tier 3) unlock to Supabase so the inviter can be
+   credited $5. Best-effort: every failure is swallowed; the game
+   never blocks on it. Only tier 3 is reported. */
+function refReportUnlock(){
+try{
+var s = refSession();
+if(!s || !s.user_id) return;
+var uid = s.user_id;
+refApi("unlocks", "POST", {user_id: uid, tier: 3}).catch(function(){ /* already recorded */ }).then(function(){
+return refApi("users?id=eq." + encodeURIComponent(uid) + "&select=invited_by", "GET");
+}).then(function(rows){
+var inviter = (rows && rows[0] && rows[0].invited_by) || null;
+if(!inviter) return;
+return refApi("referrals", "POST", {inviter_id: inviter, invitee_id: uid, reward_usd: 5, status: "pending"});
+}).catch(function(){ /* already credited or offline */ });
+}catch(e){ try{ console.log("refReportUnlock", e); }catch(e2){} }
+}
+var refBtn = document.getElementById("refBtn");
+if(refBtn){ refBtn.onclick = function(){ refOpen(); }; }
+var refBackBtn = document.getElementById("refBackBtn");
+if(refBackBtn){ refBackBtn.onclick = function(){ refClose(); }; }
+var refCloseBtn = document.getElementById("refCloseBtn");
+if(refCloseBtn){ refCloseBtn.onclick = function(){ refClose(); }; }
+var refSubmitBtn = document.getElementById("refSubmitBtn");
+if(refSubmitBtn){ refSubmitBtn.onclick = function(){ if(refMode === "login"){ refDoLogin(); } else { refDoRegister(); } }; }
+var refSwitchLink = document.getElementById("refSwitchLink");
+if(refSwitchLink){ refSwitchLink.onclick = function(e){ if(e){ e.preventDefault(); } refMode = (refMode === "login")? "register": "login"; refSetMsg(""); refRender(); return false; }; }
+var refCopyBtn = document.getElementById("refCopyBtn");
+if(refCopyBtn){ refCopyBtn.onclick = function(){ refCopyCode(); }; }
+var refLogoutBtn = document.getElementById("refLogoutBtn");
+if(refLogoutBtn){ refLogoutBtn.onclick = function(){ refClearSession(); refSetMsg(""); refRender(); }; }
+
 vgEnforceHeat(); syncHeatSeg();
 function loadRemoteConfig(){
 if(typeof fetch !== "function") return;

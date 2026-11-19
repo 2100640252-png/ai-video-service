@@ -213,6 +213,13 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #vgTime{font-size:13px;color:var(--ink2);white-space:nowrap}
 #vgMsg{color:var(--gold);font-weight:700;min-height:1.5em;margin:12px 0 0}
 #videoGateOverlay .btn{margin:12px 6px 0}
+#videoGateOverlay .vg-top{text-align:left;margin-bottom:4px}
+#videoGateOverlay .vg-top .btn{margin:0}
+#vgReq{color:var(--ink2);font-size:14px;margin:0 0 6px}
+#vgActions{margin-top:6px}
+#vgActions .btn{margin:6px 6px 0}
+#vgNativeSlot{margin-top:12px}
+#vgNativeSlot iframe,#vgNativeSlot img{max-width:100%}
 #heatSeg button.locked::after,#gameHeatSeg button.locked::after{content:" \1F512"}
 #adBanner{display:none;margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);text-align:center}
 #adBanner.open{display:block}
@@ -370,19 +377,28 @@ footer p{margin:0;max-width:760px}
 </div>
 </div>
 
-<!-- Video ad gate: watch video ads to unlock heat tier 2 / 3 -->
+<!-- Tier gate: complete ads to unlock heat tier 2 / 3.
+     Heat 2 = 1 ad action (watch / download / browse).
+     Heat 3 = 1 download ad + 1 browse ad. Back returns without penalty. -->
 <div id="videoGateOverlay" role="dialog" aria-modal="true" aria-label="视频广告">
 <div class="vg-box">
-<div class="ad-label">AD · 视频广告</div>
+<div class="vg-top"><button class="btn" id="vgBackBtn" data-i="vgBack">← 返回</button></div>
+<div class="ad-label">AD · 广告解锁</div>
 <h3 id="vgTitle"></h3>
+<p id="vgReq"></p>
 <p id="vgProgress"></p>
+<div id="vgActions">
+<button class="btn gold" id="vgVideoBtn" data-i="vgVideoBtn">▶ 看视频广告</button>
+<button class="btn gold" id="vgDlBtn" data-i="vgDlBtn">⬇ 下载广告</button>
+<button class="btn" id="vgBrowseBtn" data-i="vgBrowseBtn">↗ 浏览广告</button>
+</div>
 <video id="vgVideo" playsinline webkit-playsinline preload="auto"></video>
 <div id="vgBarWrap"><div id="vgBar"><div id="vgBarFill"></div></div><span id="vgTime"></span></div>
 <p id="vgMsg"></p>
 <button class="btn gold" id="vgPlayBtn" data-i="vgPlay" style="display:none">▶ 播放广告</button>
-<button class="btn gold" id="vgNextBtn" data-i="vgNext" style="display:none">继续看下一个</button>
 <button class="btn" id="vgRetryBtn" data-i="vgRetry" style="display:none">重试</button>
 <button class="btn" id="vgCloseBtn" data-i="vgClose">关闭 ✕</button>
+<div id="vgNativeSlot"><div id="container-0925149469bb04c106e214f794268087"></div></div>
 </div>
 </div>
 
@@ -499,6 +515,16 @@ vgClose:{zh:"关闭 ✕",en:"Close ✕"},
 vgPlay:{zh:"▶ 播放广告",en:"▶ Play ad"},
 vgTimeLeft:{zh:"还剩 {S} 秒",en:"{S}s left"},
 vgLoading:{zh:"正在加载广告…",en:"Loading ad…"},
+vgBack:{zh:"← 返回",en:"← Back"},
+vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
+vgDlBtn:{zh:"⬇ 下载广告",en:"⬇ Download ad"},
+vgBrowseBtn:{zh:"↗ 浏览广告",en:"↗ Browse ad"},
+vgReq2:{zh:"看满 1 个广告即可解锁",en:"Complete 1 ad to unlock"},
+vgReq3:{zh:"完成 1 个下载广告 + 1 个浏览广告即可解锁",en:"Complete 1 download ad + 1 browse ad to unlock"},
+vgProg2:{zh:"已完成 {GOT}/1",en:"Done {GOT}/1"},
+vgProg3:{zh:"下载 {DL}/1，浏览 {BR}/1",en:"Download {DL}/1, Browse {BR}/1"},
+vgNeedDl:{zh:"还差 1 个下载广告",en:"1 download ad to go"},
+vgNeedBr:{zh:"还差 1 个浏览广告",en:"1 browse ad to go"},
 };
 function t(k){ return I[k]? I[k][LANG]: k;}
 function applyLang(){
@@ -1323,12 +1349,10 @@ flirtTimer = setInterval(rotateFlirt, 3000);
 /* ================= Wire up ================= */
 document.getElementById("gateEnter").onclick = function(){
 document.getElementById("gate").style.display = "none";
-/* Load the page ad scripts only now, after the age gate is passed: the
-   two popunder scripts put a transparent click-catching layer over the
-   page, and loading them before the gate eats the first click(s) on
-   this Enter button. Use the remote config list when it has arrived,
-   otherwise the built-in defaults (same codes). */
-try{ loadPageScripts((CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS); psDone = true; }catch(e){}
+/* No page ad scripts load here any more: the game screen shows only the
+   hardcoded JuicyAds banner. The other ad scripts load inside the tier
+   gate when it opens (see vgLoadGateAds), and the popunders only after
+   a successful tier unlock (see loadDeferredPageScripts). */
 checkForUpdate();
 MUSIC.started = true;
 applyMusicConfig();
@@ -1616,7 +1640,6 @@ vgEnforceHeat(); syncHeatSeg();
 /* ---- Ads: fire a configured trigger through its configured network ---- */
 function fireAd(event){
 try{
-if(event === "finish_round"){ loadDeferredPageScripts(); }
 if(!CFG || !CFG.ads || CFG.ads.master !== true) return;
 var trig = null;
 (CFG.ads.triggers || []).forEach(function(x){ if(x && x.event === event){ trig = x;}});
@@ -1679,23 +1702,21 @@ if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad 
 ov.classList.add("open");
 }
 /* ================= Page ad scripts (social bar / native / popunder) =====
-   Load-once scripts that run with the page (not tied to a game event):
-   Adsterra Social Bar + Native Banner + Popunder, JuicyAds
-   Interstitial Native + PopUnder. They load ONLY after the age gate
-   is passed (see gateEnter) — EXCEPT the two popunders, which are
-   deferred: they load only after the user finishes their first round
-   (see loadDeferredPageScripts, called from fireAd("finish_round")),
+   Load-once scripts (not tied to a game event): Adsterra Social Bar +
+   Native Banner + Popunder, JuicyAds Interstitial Native + PopUnder.
+   They load ONLY inside the tier gate when it opens (see
+   vgLoadGateAds) — EXCEPT the two popunders, which are deferred:
+   they load only after the gate closes following a SUCCESSFUL tier
+   unlock (see loadDeferredPageScripts, called from vgCountAction),
    once per session. The popunders put a transparent click-catching
    layer over the page with NO close button and can hijack the current
-   tab to an ad page, so loading them at the gate ate the tap that
-   should open a game — the game could not be opened at all on a
-   phone. Loading them after a round means the game opens and plays
-   normally first, and the popunder fires at a natural break between
-   rounds. The remote config can override them through
-   ads.pageScripts: [{key, enabled, defer, code}] — set defer:true on
-   a script to hold it until the first round ends. When the config has
-   not arrived yet, the built-in defaults below run, so the ads keep
-   working. Toggle each one from the backend. */
+   tab to an ad page, so they must never load while the user is trying
+   to open a game or tap a gate button. The game screen itself shows
+   only the hardcoded JuicyAds banner. The remote config can override
+   them through ads.pageScripts: [{key, enabled, defer, code}] — set
+   defer:true on a script to hold it until a successful unlock. When
+   the config has not arrived yet, the built-in defaults below run, so
+   the ads keep working. Toggle each one from the backend. */
 var PS_DEFAULTS = [
 {key:"adsterra-popunder", enabled:true, defer:true, code:"<script data-cfasync=\"false\" src=\"https://benchform.org/1/24a76c40453e6790851673a24200bb35\"><\/script>"},
 {key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
@@ -1725,7 +1746,11 @@ for(var j=0;j<n.attributes.length;j++){ s.setAttribute(n.attributes[j].name, n.a
 s.text = n.text || n.textContent || "";
 (document.head || document.body).appendChild(s);
 } else if(document.body) {
-document.body.appendChild(n);
+/* If a node with this id is already in the document (e.g. the native
+   ad container pre-placed inside the tier gate overlay), keep it where
+   it is instead of appending a duplicate to the end of the body. */
+if(n.id && document.getElementById(n.id)){ /* already in place */ }
+else { document.body.appendChild(n); }
 }
 });
 });
@@ -1736,10 +1761,12 @@ drawCount++;
 fireAd("draw_card");
 if(drawCount % 3 === 0){ fireAd("every_3_draws");}
 }
-/* Deferred page scripts (the popunders): load them once, the first time
-   a round ends. They must NOT load at the gate — their click-catching
-   layer would eat the tap that opens a game. After a round the user has
-   already played, so the popunder fires at a natural break. */
+/* Deferred page scripts (the popunders): load them once, when the tier
+   gate closes after a SUCCESSFUL unlock. They must NOT load while the
+   user is opening a game or tapping gate buttons — their click-catching
+   layer would eat those taps. After an unlock the user is already in,
+   so the popunder fires at a natural break. Closing the gate via Back
+   or ✕ without unlocking does NOT load them. */
 var psDeferredDone = false;
 function loadDeferredPageScripts(){
 try{
@@ -1754,19 +1781,29 @@ if(adCloseBtn){ adCloseBtn.onclick = function(){ document.getElementById("adOver
 var adBannerCloseBtn = document.getElementById("adBannerClose");
 if(adBannerCloseBtn){ adBannerCloseBtn.onclick = function(){ var b = document.getElementById("adBanner"); if(b){ b.classList.remove("open");} var s = document.getElementById("adBannerSlot"); if(s){ s.innerHTML = ""; } };}
 
-/* ================= Video ad tier gate =================
-   Heat 2 (升温) unlocks after 1 fully-watched video ad, heat 3 (大胆)
-   after 2. Watching 2 videos for heat 3 also satisfies heat 2.
-   Unlocks persist per device in localStorage ("cp_video_unlocks").
+/* ================= Tier gate: complete ads to unlock heat 2 / 3 ================
+   Heat 2 (升温) unlocks after 1 completed ad action (watch a video, or
+   open a download ad, or open a browse ad). Heat 3 (大胆) unlocks after
+   1 download ad AND 1 browse ad. Progress persists per device in
+   localStorage ("cp_gate_progress" = {browse:0/1, download:0/1}).
+   Migration: the old store ("cp_video_unlocks", watched video count)
+   seeds browse=1 when watched>=1; download is never granted by videos.
    The gate is active ONLY when the remote config sets
    ads.videoGate = {enabled:true, vastTag:"<http(s) URL>", required:{"2":1,"3":2}}.
    Without it (or with an empty tag), tiers stay free exactly as before.
    The video is a minimal VAST player: fetch the tag, follow Wrapper
    redirects (max 3), play the best MP4, fire impression / quartile /
    complete beacons, count the watch only when the video ends. No skip
-   button; seeking is reset; closing gives up without counting. */
+   button; seeking is reset; closing gives up without counting.
+   Back (← 返回) and Close (✕) return to the game without unlocking and
+   without penalty. The non-deferred page scripts (Social Bar, Native
+   Banner, Interstitial) load inside the gate when it opens; the
+   popunders load only after a successful unlock (see
+   loadDeferredPageScripts). */
 var VG_STORE_KEY = "cp_video_unlocks";
+var VG_PROG_KEY = "cp_gate_progress";
 var vgWatchedMem = 0;
+var vgProgMem = {browse: 0, download: 0};
 var vgLsOk = false;
 try{ localStorage.setItem("__cp_vg_test__", "1"); localStorage.removeItem("__cp_vg_test__"); vgLsOk = true; }catch(e){ vgLsOk = false; }
 function vgWatched(){
@@ -1775,9 +1812,34 @@ try{ var o = JSON.parse(localStorage.getItem(VG_STORE_KEY) || "{}"); var n = par
 }
 return vgWatchedMem;
 }
-function vgSetWatched(n){
-vgWatchedMem = n;
-if(vgLsOk){ try{ localStorage.setItem(VG_STORE_KEY, JSON.stringify({watched: n})); }catch(e){} }
+function vgMigrateProg(){
+/* One-time migration from the old video-count store: a watched video
+   counts as a browse action. Download is never granted by videos. */
+var w = 0;
+try{ w = vgWatched(); }catch(e){ w = 0; }
+var p = {browse: (w >= 1)? 1: 0, download: 0};
+vgProgMem = p;
+if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(p)); }catch(e){} }
+return p;
+}
+function vgProg(){
+if(vgLsOk){
+try{
+var raw = localStorage.getItem(VG_PROG_KEY);
+if(raw){
+var o = JSON.parse(raw);
+var p = {browse: (o && o.browse)? 1: 0, download: (o && o.download)? 1: 0};
+vgProgMem = p;
+return p;
+}
+} catch(e){}
+return vgMigrateProg();
+}
+return vgProgMem;
+}
+function vgSetProg(p){
+vgProgMem = {browse: p.browse? 1: 0, download: p.download? 1: 0};
+if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(vgProgMem)); }catch(e){} }
 }
 /* Built-in fallback: the gate must never silently vanish because the remote
    config fetch failed or timed out (CFG is null until it loads). When the
@@ -1794,15 +1856,12 @@ var r2 = parseInt(g.required && g.required["2"], 10); if(isNaN(r2) || r2 < 0) r2
 var r3 = parseInt(g.required && g.required["3"], 10); if(isNaN(r3) || r3 < 0) r3 = 2;
 return {tag: tag, r2: r2, r3: r3};
 }
-function vgRequired(heat){
-var g = vgGateCfg(); if(!g) return 0;
-if(heat === 2) return g.r2;
-if(heat === 3) return g.r3;
-return 0;
-}
 function vgIsUnlocked(heat){
 if(heat <= 1) return true;
-return vgWatched() >= vgRequired(heat);
+var p = vgProg();
+if(heat === 2) return (p.browse >= 1 || p.download >= 1);
+if(heat === 3) return (p.browse >= 1 && p.download >= 1);
+return false;
 }
 function vgEnforceHeat(){
 if(vgGateCfg() && HEAT > 1 && !vgIsUnlocked(HEAT)){ HEAT = 1; syncHeatSeg(); }
@@ -1906,25 +1965,39 @@ var vgLastTime = 0;
 var vgImpressionFired = false;
 var vgFiredQ = {};
 var vgDuration = 0;
+var vgVideoSeq = 0;
 function vgSetMsg(s){ var el = document.getElementById("vgMsg"); if(el){ el.textContent = s || ""; } }
 function vgUpdateGateText(){
-var need = vgRequired(vgTargetHeat);
-var got = vgWatched();
 var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
 var title = document.getElementById("vgTitle");
 if(title){ title.textContent = t("vgTitle").replace("{TIER}", tierName); }
+var req = document.getElementById("vgReq");
+if(req){ req.textContent = (vgTargetHeat === 3)? t("vgReq3"): t("vgReq2"); }
+var p = vgProg();
 var pr = document.getElementById("vgProgress");
-if(pr){ pr.textContent = t("vgProgress").split("{NEED}").join(String(need)).split("{GOT}").join(String(Math.min(got, need))); }
+if(pr){
+if(vgTargetHeat === 3){
+pr.textContent = t("vgProg3").split("{DL}").join(String(p.download)).split("{BR}").join(String(p.browse));
+} else {
+var got = (p.browse || p.download)? 1: 0;
+pr.textContent = t("vgProg2").split("{GOT}").join(String(got));
+}
+}
 }
 function vgShowState(st){
 var v = document.getElementById("vgVideo");
 var pb = document.getElementById("vgPlayBtn");
-var nb = document.getElementById("vgNextBtn");
 var rb = document.getElementById("vgRetryBtn");
-if(v){ v.style.display = (st === "video" || st === "playbtn" || st === "next")? "block": "none"; }
+var ab = document.getElementById("vgActions");
+var bw = document.getElementById("vgBarWrap");
+if(v){ v.style.display = (st === "video" || st === "playbtn")? "block": "none"; }
 if(pb){ pb.style.display = (st === "playbtn")? "inline-block": "none"; }
-if(nb){ nb.style.display = (st === "next")? "inline-block": "none"; }
 if(rb){ rb.style.display = (st === "noad")? "inline-block": "none"; }
+/* Action buttons stay available in actions / loading / noad, so the user
+   can always pick another ad source instead of getting stuck. They hide
+   only while a video is playing. */
+if(ab){ ab.style.display = (st === "actions" || st === "loading" || st === "noad")? "block": "none"; }
+if(bw){ bw.style.display = (st === "video" || st === "playbtn")? "flex": "none"; }
 }
 function vgFire(urls){
 if(!urls) return;
@@ -1957,6 +2030,7 @@ vgShowState("noad");
 function vgCloseGate(){
 var ov = document.getElementById("videoGateOverlay");
 if(ov){ ov.classList.remove("open"); }
+vgVideoSeq++;
 var v = document.getElementById("vgVideo");
 if(v){ try{ v.pause(); }catch(e){} v.removeAttribute("src"); try{ v.load(); }catch(e){} }
 vgAd = null;
@@ -1965,11 +2039,13 @@ vgTargetHeat = 0;
 function vgLoadAndPlay(){
 var g = vgGateCfg();
 if(!g){ vgShowNoAd(); return; }
+var seq = ++vgVideoSeq;
 vgSetMsg(t("vgLoading"));
 var tm1 = document.getElementById("vgTime"); if(tm1){ tm1.textContent = ""; }
 var fl1 = document.getElementById("vgBarFill"); if(fl1){ fl1.style.width = "0%"; }
 vgShowState("loading");
 vgFetchVast(g.tag, 0, function(ad){
+if(seq !== vgVideoSeq){ return; }
 if(!ad){ vgShowNoAd(); return; }
 vgAd = ad;
 vgImpressionFired = false;
@@ -1989,26 +2065,75 @@ if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
 function vgOnEnded(){
 if(!vgTargetHeat){ return; }
 vgFire(vgAd? vgAd.tracking.complete: null);
-var n = vgWatched() + 1;
-vgSetWatched(n);
+vgCountAction("browse");
+}
+/* Count one completed ad action ("browse" or "download") toward the
+   target tier. A watched video counts as browse; the Download button
+   counts as download; the Browse button counts as browse. When the
+   target tier's requirements are met, unlock it exactly like the old
+   video gate did, then close the gate and load the deferred popunder
+   scripts once. Otherwise show what is still missing and return to the
+   action buttons so the user can pick another ad source. */
+function vgCountAction(kind){
+if(!vgTargetHeat){ return; }
+var p = vgProg();
+if(kind === "browse"){ p.browse = 1; }
+if(kind === "download"){ p.download = 1; }
+vgSetProg(p);
+vgUpdateGateText();
 if(vgIsUnlocked(vgTargetHeat)){
 var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
 vgSetMsg(t("vgUnlocked").replace("{TIER}", tierName));
 var h = vgTargetHeat;
 setTimeout(function(){
 vgCloseGate();
+loadDeferredPageScripts();
 HEAT = h;
 syncHeatSeg();
 if(currentGame){ openGame(currentGame, true); }
 }, 900);
 } else {
-var need = vgRequired(vgTargetHeat);
-var left = need - vgWatched();
-if(left < 1) left = 1;
-vgSetMsg(t("vgNeedMore").replace("{N}", String(left)));
-vgUpdateGateText();
-vgShowState("next");
+var miss = "";
+if(vgTargetHeat === 3){
+if(!p.download){ miss = t("vgNeedDl"); }
+else if(!p.browse){ miss = t("vgNeedBr"); }
 }
+vgSetMsg(miss);
+vgShowState("actions");
+}
+}
+/* Download / browse link ads: open the network's zoneCode in a new tab.
+   The click (new tab opens) counts as the action. The actual install /
+   view is tracked by the ad network, not by this page. */
+var VG_DL_FALLBACK = "https://auctionr.org/4/773766fc6c76e8a6733c6d7e1ef22bce";
+var VG_BR_FALLBACK = "https://ashamed-employer.com/sOkLSm";
+function vgNetZoneCode(key, fallback){
+var nets = (CFG && CFG.ads && CFG.ads.networks) || [];
+for(var i=0;i<nets.length;i++){
+if(nets[i] && nets[i].key === key){
+var c = (nets[i].zoneCode || "").replace(/^\s+|\s+$/g, "");
+if(c) return c;
+}
+}
+return fallback;
+}
+function vgOpenLink(kind){
+vgVideoSeq++;
+var v = document.getElementById("vgVideo");
+if(v){ try{ v.pause(); }catch(e){} }
+var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgNetZoneCode("hilltopads", VG_BR_FALLBACK);
+try{ window.open(url, "_blank"); }catch(e){}
+vgCountAction(kind);
+}
+/* Load the non-deferred page scripts inside the tier gate (Social Bar,
+   Native Banner, Interstitial). The psLoaded guard makes this once per
+   session. The Native Banner renders into its container div pre-placed
+   inside the gate overlay. Popunders are NOT loaded here. */
+function vgLoadGateAds(){
+try{
+var list = (CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS;
+loadPageScripts(list, false);
+}catch(e){}
 }
 function vgOpenGate(targetHeat){
 vgTargetHeat = targetHeat;
@@ -2017,7 +2142,8 @@ if(!ov) return;
 vgSetMsg("");
 vgUpdateGateText();
 ov.classList.add("open");
-vgLoadAndPlay();
+vgLoadGateAds();
+vgShowState("actions");
 }
 function vgWireVideo(){
 var v = document.getElementById("vgVideo");
@@ -2054,10 +2180,16 @@ if(vgAd){ vgShowNoAd(); }
 vgWireVideo();
 var vgCloseBtn = document.getElementById("vgCloseBtn");
 if(vgCloseBtn){ vgCloseBtn.onclick = function(){ vgCloseGate(); }; }
+var vgBackBtn = document.getElementById("vgBackBtn");
+if(vgBackBtn){ vgBackBtn.onclick = function(){ vgCloseGate(); }; }
 var vgRetryBtn = document.getElementById("vgRetryBtn");
 if(vgRetryBtn){ vgRetryBtn.onclick = function(){ vgLoadAndPlay(); }; }
-var vgNextBtn = document.getElementById("vgNextBtn");
-if(vgNextBtn){ vgNextBtn.onclick = function(){ vgUpdateGateText(); vgLoadAndPlay(); }; }
+var vgVideoBtn = document.getElementById("vgVideoBtn");
+if(vgVideoBtn){ vgVideoBtn.onclick = function(){ vgLoadAndPlay(); }; }
+var vgDlBtn = document.getElementById("vgDlBtn");
+if(vgDlBtn){ vgDlBtn.onclick = function(){ vgOpenLink("download"); }; }
+var vgBrowseBtn = document.getElementById("vgBrowseBtn");
+if(vgBrowseBtn){ vgBrowseBtn.onclick = function(){ vgOpenLink("browse"); }; }
 var vgPlayBtn = document.getElementById("vgPlayBtn");
 if(vgPlayBtn){ vgPlayBtn.onclick = function(){
 var v = document.getElementById("vgVideo");

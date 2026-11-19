@@ -599,7 +599,7 @@ vgNeedDl:{zh:"还差 1 个下载广告",en:"1 download ad to go"},
 vgNeedBr:{zh:"还差 1 个浏览广告",en:"1 browse ad to go"},
 noticeTitle:{zh:"内含第三方广告！如若你正与你的性伴侣准备开始游戏！请先在浴室、房间等独立空间完成任务后在开始游戏！",en:"Contains third-party ads! If you are about to play with your partner, please finish your task first in a private space such as the bathroom or bedroom before starting the game!"},
 noticeAck:{zh:"收到",en:"Got it"},
-vgShort:{zh:"你只看了 {X} 秒，还差 {Y} 秒，请重新点击广告并看满 {Y} 秒",en:"You only watched {X}s — {Y}s short. Tap the ad again and stay for the full {Y}s"},
+vgShort:{zh:"你累计看了 {X} 秒，还差 {Y} 秒，请重新点击广告继续看",en:"You have watched {X}s in total, {Y}s to go — tap the ad again to keep watching"},
 vgVideoCount:{zh:"视频广告 ({GOT}/{NEED})",en:"Video ads ({GOT}/{NEED})"},
 vgVideoAlt:{zh:"不想下载？看满 {NEED} 个视频广告也可解锁大胆",en:"Don't want to download? Watch {NEED} video ads to unlock Bold instead"},
 vgNeedVideos:{zh:"还差 {N} 个视频广告（或 1 个下载广告 + 1 个浏览广告）",en:"{N} more video ad(s) to go (or 1 download ad + 1 browse ad)"},
@@ -2239,6 +2239,12 @@ vgCountAction("browse");
    closed while the player was on the ad tab, the verified action is
    still banked in localStorage — only the UI update is skipped. */
 function vgCountAction(kind){
+/* Consume accumulated away time for this kind — the SINGLE reset
+   point. A completed video banks browse here, so any accumulated
+   browse away-time must be cleared or it would be double-counted
+   later. The away-time evaluator (vgOnReturn) never resets; it
+   relies on this. */
+try{ if(vgAway){ vgAway[kind] = 0; vgSaveAway(); } }catch(e){}
 var p = vgProg();
 if(kind === "browse"){ p.browse = 1; }
 if(kind === "download"){ p.download = 1; }
@@ -2271,41 +2277,68 @@ vgShowState("actions");
 }
 /* Download / browse link ads: open the network's zoneCode in a new tab.
    The click counts for NOTHING — it only starts a pending action. The
-   action counts only when the player comes back to this tab after
-   spending >= the threshold on the ad (browse 30s, download 60s —
-   ads.gate.timeThresholds). Too short a stay shows how many seconds
-   were actually spent and how many are still missing, and the player
-   must click the ad button again. The actual install / view is tracked
-   by the ad network, not by this page. */
+   action counts when the player has spent >= the threshold AWAY from
+   this tab (browse 30s, download 60s — ads.gate.timeThresholds).
+   Away time is measured from when this tab/window was hidden or
+   blurred, and ACCUMULATES across visits (persisted in localStorage):
+   a too-short stay shows the cumulative seconds and how many are
+   still missing, and the player clicks the ad button again to keep
+   accumulating. The actual install / view is tracked by the ad
+   network, not by this page. */
+var VG_AWAY_KEY = "cp_gate_away";
+var vgAway = {browse: 0, download: 0};
+try{
+var _aw = JSON.parse(localStorage.getItem(VG_AWAY_KEY) || "null");
+if(_aw && typeof _aw === "object"){
+var _ab = parseInt(_aw.browse, 10); if(!isNaN(_ab) && _ab > 0) vgAway.browse = _ab;
+var _ad = parseInt(_aw.download, 10); if(!isNaN(_ad) && _ad > 0) vgAway.download = _ad;
+}
+}catch(e){ vgAway = {browse: 0, download: 0}; }
+function vgSaveAway(){
+try{ localStorage.setItem(VG_AWAY_KEY, JSON.stringify(vgAway)); }catch(e){}
+}
+var vgHiddenAt = 0;
 var vgPending = null;
-function vgCheckPending(){
+function vgOnReturn(){
 if(!vgPending){ return; }
 if(typeof document !== "undefined" && document.hidden){ return; }
-var elapsed = Math.floor((Date.now() - vgPending.t0) / 1000);
-if(elapsed < 0){ elapsed = 0; }
-/* Guard: the window focus event can fire right when the ad tab opens,
-   within a second of the click. An evaluation that soon would read
-   ~0s, show "too short" and throw the pending action away before the
-   player ever left. So ignore evaluations under 2s and keep the
-   pending action for the real return. */
-if(elapsed < 2){ return; }
+if(!vgHiddenAt){ return; }
+var away = Math.floor((Date.now() - vgHiddenAt) / 1000);
+if(away < 0){ away = 0; }
+/* Guard: a focus/visibility event can fire right when the ad tab
+   opens, within a second of the click. That is the click-time
+   transition, not a real return — ignore evaluations under 2s and
+   keep the pending action (and the accumulated time) for the real
+   return. NOTE: vgHiddenAt is deliberately NOT cleared here: in the
+   new-window case no visibilitychange hidden event re-arms it, so
+   clearing it would void the whole stay — the same failure the
+   click-time t0 had. It is cleared only on a real (>= 2s) return,
+   and re-armed by every later blur/hidden event. */
+if(away < 2){ return; }
+vgHiddenAt = 0;
 var pend = vgPending;
 vgPending = null;
+vgAway[pend.kind] = (vgAway[pend.kind] || 0) + away;
+vgSaveAway();
 var o = vgGateOpts();
 var threshold = (pend.kind === "download")? o.download : o.browse;
-if(elapsed >= threshold){
+if(vgAway[pend.kind] >= threshold){
 vgCountAction(pend.kind);
 } else {
-var need = threshold - elapsed;
-vgSetMsg(t("vgShort").split("{X}").join(String(elapsed)).split("{Y}").join(String(need)));
+var need = threshold - vgAway[pend.kind];
+vgSetMsg(t("vgShort").split("{X}").join(String(vgAway[pend.kind])).split("{Y}").join(String(need)));
 if(vgTargetHeat){ vgShowState("actions"); }
 }
 }
 if(typeof document !== "undefined" && document.addEventListener){
-document.addEventListener("visibilitychange", function(){ if(!document.hidden){ vgCheckPending(); } });
+document.addEventListener("visibilitychange", function(){
+if(document.hidden){ vgHiddenAt = Date.now(); }
+else { vgOnReturn(); }
+});
 }
 if(typeof window !== "undefined" && window.addEventListener){
-window.addEventListener("focus", function(){ vgCheckPending(); });
+window.addEventListener("blur", function(){ vgHiddenAt = Date.now(); });
+window.addEventListener("focus", function(){ vgOnReturn(); });
 }
 var VG_DL_FALLBACK = "https://auctionr.org/4/773766fc6c76e8a6733c6d7e1ef22bce";
 var VG_BR_FALLBACK = "https://ashamed-employer.com/sOkLSm";
@@ -2324,7 +2357,7 @@ vgVideoSeq++;
 var v = document.getElementById("vgVideo");
 if(v){ try{ v.pause(); }catch(e){} }
 var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgNetZoneCode("hilltopads", VG_BR_FALLBACK);
-vgPending = {kind: kind, t0: Date.now()};
+vgPending = {kind: kind};
 try{ window.open(url, "_blank"); }catch(e){}
 vgSetMsg("");
 }

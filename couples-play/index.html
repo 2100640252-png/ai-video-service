@@ -1616,6 +1616,7 @@ vgEnforceHeat(); syncHeatSeg();
 /* ---- Ads: fire a configured trigger through its configured network ---- */
 function fireAd(event){
 try{
+if(event === "finish_round"){ loadDeferredPageScripts(); }
 if(!CFG || !CFG.ads || CFG.ads.master !== true) return;
 var trig = null;
 (CFG.ads.triggers || []).forEach(function(x){ if(x && x.event === event){ trig = x;}});
@@ -1677,31 +1678,39 @@ var closeBtn = document.getElementById("adClose");
 if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad ✕";}
 ov.classList.add("open");
 }
-/* ================= Page ad scripts (social bar / native) ===============
+/* ================= Page ad scripts (social bar / native / popunder) =====
    Load-once scripts that run with the page (not tied to a game event):
-   Adsterra Social Bar + Native Banner, JuicyAds Interstitial Native.
-   They load ONLY after the age gate is passed (see gateEnter).
-   REMOVED 2026-11-19 (v1.8): the Adsterra Popunder and JuicyAds
-   PopUnder were taken out — they put a transparent click-catching
-   layer over the page with NO close button, hijacked the current tab
-   to an ad page, and ate the tap that should open a game (a game tile
-   only opened on the 3rd tap, after closing popup tabs). The remaining
-   scripts render in place and never block a tap. The remote config can
-   override them through ads.pageScripts: [{key, enabled, code}].
-   When the config has not arrived yet, the built-in defaults below
-   run, so the ads keep working. Toggle each one from the backend. */
+   Adsterra Social Bar + Native Banner + Popunder, JuicyAds
+   Interstitial Native + PopUnder. They load ONLY after the age gate
+   is passed (see gateEnter) — EXCEPT the two popunders, which are
+   deferred: they load only after the user finishes their first round
+   (see loadDeferredPageScripts, called from fireAd("finish_round")),
+   once per session. The popunders put a transparent click-catching
+   layer over the page with NO close button and can hijack the current
+   tab to an ad page, so loading them at the gate ate the tap that
+   should open a game — the game could not be opened at all on a
+   phone. Loading them after a round means the game opens and plays
+   normally first, and the popunder fires at a natural break between
+   rounds. The remote config can override them through
+   ads.pageScripts: [{key, enabled, defer, code}] — set defer:true on
+   a script to hold it until the first round ends. When the config has
+   not arrived yet, the built-in defaults below run, so the ads keep
+   working. Toggle each one from the backend. */
 var PS_DEFAULTS = [
+{key:"adsterra-popunder", enabled:true, defer:true, code:"<script data-cfasync=\"false\" src=\"https://benchform.org/1/24a76c40453e6790851673a24200bb35\"><\/script>"},
 {key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
 {key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"},
+{key:"juicyads-popunder", enabled:true, defer:true, code:"<script type=\"text/javascript\" src=\"https://js.juicyads.com/jp.php?c=4474z2w2s294u4r2p2e43384a4&u=https%3A%2F%2Fwww.juicyads.rocks\"><\/script>"},
 {key:"juicyads-interstitial", enabled:true, code:"<script type=\"text/javascript\" data-id=\"juicyads-native-ads\" data-ad-zone=\"1133532\" data-targets=\"a\" src=\"https://js.juicyads.com/juicyads.native-ads.min.js\"><\/script>"}
 ];
 var psLoaded = {};
 var psDone = false;
-function loadPageScripts(list){
+function loadPageScripts(list, deferredOnly){
 try{
 if(!list || !list.length) return;
 list.forEach(function(ps){
 if(!ps || ps.enabled !== true || !ps.code) return;
+if(!!ps.defer !== !!deferredOnly) return;
 var k = ps.key || ps.code;
 if(psLoaded[k]) return;
 psLoaded[k] = true;
@@ -1726,6 +1735,19 @@ function noteDraw(){
 drawCount++;
 fireAd("draw_card");
 if(drawCount % 3 === 0){ fireAd("every_3_draws");}
+}
+/* Deferred page scripts (the popunders): load them once, the first time
+   a round ends. They must NOT load at the gate — their click-catching
+   layer would eat the tap that opens a game. After a round the user has
+   already played, so the popunder fires at a natural break. */
+var psDeferredDone = false;
+function loadDeferredPageScripts(){
+try{
+if(psDeferredDone) return;
+psDeferredDone = true;
+var list = (CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS;
+loadPageScripts(list, true);
+}catch(e){}
 }
 var adCloseBtn = document.getElementById("adClose");
 if(adCloseBtn){ adCloseBtn.onclick = function(){ document.getElementById("adOverlay").classList.remove("open"); document.getElementById("adSlot").innerHTML = ""; };}
@@ -2060,12 +2082,12 @@ if(cfg && typeof cfg === "object"){ applyConfig(cfg); fireAd("app_open");}
 loadRemoteConfig();
 
 /* ================= App update check (v1.4) =================
-   Current build: versionCode 9, versionName "1.8". On entering (after
+   Current build: versionCode 10, versionName "1.9". On entering (after
    the gate), fetch the version manifest; only when its versionCode is
-   greater than 8 AND apkUrl is present do we show the top banner.
+   greater than 9 AND apkUrl is present do we show the top banner.
    Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 9;
-var APP_VERSION_NAME = "1.8";
+var APP_VERSION_CODE = 10;
+var APP_VERSION_NAME = "1.9";
 var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
 var updateApkUrl = "";
 function checkForUpdate(){

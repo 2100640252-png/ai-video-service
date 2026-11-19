@@ -1351,8 +1351,9 @@ document.getElementById("gateEnter").onclick = function(){
 document.getElementById("gate").style.display = "none";
 /* No page ad scripts load here any more: the game screen shows only the
    hardcoded JuicyAds banner. The other ad scripts load inside the tier
-   gate when it opens (see vgLoadGateAds), and the popunders only after
-   a successful tier unlock (see loadDeferredPageScripts). */
+   gate when it opens (see vgLoadGateAds). Popunders were removed
+   entirely (2026-11-19): their click-catching layer ate every game tap
+   after an unlock, so no popunder script loads anywhere on this page. */
 checkForUpdate();
 MUSIC.started = true;
 applyMusicConfig();
@@ -1701,37 +1702,29 @@ var closeBtn = document.getElementById("adClose");
 if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad ✕";}
 ov.classList.add("open");
 }
-/* ================= Page ad scripts (social bar / native / popunder) =====
+/* ================= Page ad scripts (social bar / native / interstitial) =====
    Load-once scripts (not tied to a game event): Adsterra Social Bar +
-   Native Banner + Popunder, JuicyAds Interstitial Native + PopUnder.
-   They load ONLY inside the tier gate when it opens (see
-   vgLoadGateAds) — EXCEPT the two popunders, which are deferred:
-   they load only after the gate closes following a SUCCESSFUL tier
-   unlock (see loadDeferredPageScripts, called from vgCountAction),
-   once per session. The popunders put a transparent click-catching
-   layer over the page with NO close button and can hijack the current
-   tab to an ad page, so they must never load while the user is trying
-   to open a game or tap a gate button. The game screen itself shows
-   only the hardcoded JuicyAds banner. The remote config can override
-   them through ads.pageScripts: [{key, enabled, defer, code}] — set
-   defer:true on a script to hold it until a successful unlock. When
+   Native Banner, JuicyAds Interstitial Native. They load ONLY inside
+   the tier gate when it opens (see vgLoadGateAds). The game screen
+   itself shows only the hardcoded JuicyAds banner. Popunders were
+   REMOVED from this page (2026-11-19): their transparent click-catching
+   layer ate every game tap after an unlock, so the popunder format
+   cannot live on a click-driven game page at all. The remote config can
+   override these through ads.pageScripts: [{key, enabled, code}]. When
    the config has not arrived yet, the built-in defaults below run, so
    the ads keep working. Toggle each one from the backend. */
 var PS_DEFAULTS = [
-{key:"adsterra-popunder", enabled:true, defer:true, code:"<script data-cfasync=\"false\" src=\"https://benchform.org/1/24a76c40453e6790851673a24200bb35\"><\/script>"},
 {key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
 {key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"},
-{key:"juicyads-popunder", enabled:true, defer:true, code:"<script type=\"text/javascript\" src=\"https://js.juicyads.com/jp.php?c=4474z2w2s294u4r2p2e43384a4&u=https%3A%2F%2Fwww.juicyads.rocks\"><\/script>"},
 {key:"juicyads-interstitial", enabled:true, code:"<script type=\"text/javascript\" data-id=\"juicyads-native-ads\" data-ad-zone=\"1133532\" data-targets=\"a\" src=\"https://js.juicyads.com/juicyads.native-ads.min.js\"><\/script>"}
 ];
 var psLoaded = {};
 var psDone = false;
-function loadPageScripts(list, deferredOnly){
+function loadPageScripts(list){
 try{
 if(!list || !list.length) return;
 list.forEach(function(ps){
 if(!ps || ps.enabled !== true || !ps.code) return;
-if(!!ps.defer !== !!deferredOnly) return;
 var k = ps.key || ps.code;
 if(psLoaded[k]) return;
 psLoaded[k] = true;
@@ -1761,21 +1754,6 @@ drawCount++;
 fireAd("draw_card");
 if(drawCount % 3 === 0){ fireAd("every_3_draws");}
 }
-/* Deferred page scripts (the popunders): load them once, when the tier
-   gate closes after a SUCCESSFUL unlock. They must NOT load while the
-   user is opening a game or tapping gate buttons — their click-catching
-   layer would eat those taps. After an unlock the user is already in,
-   so the popunder fires at a natural break. Closing the gate via Back
-   or ✕ without unlocking does NOT load them. */
-var psDeferredDone = false;
-function loadDeferredPageScripts(){
-try{
-if(psDeferredDone) return;
-psDeferredDone = true;
-var list = (CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS;
-loadPageScripts(list, true);
-}catch(e){}
-}
 var adCloseBtn = document.getElementById("adClose");
 if(adCloseBtn){ adCloseBtn.onclick = function(){ document.getElementById("adOverlay").classList.remove("open"); document.getElementById("adSlot").innerHTML = ""; };}
 var adBannerCloseBtn = document.getElementById("adBannerClose");
@@ -1796,10 +1774,9 @@ if(adBannerCloseBtn){ adBannerCloseBtn.onclick = function(){ var b = document.ge
    complete beacons, count the watch only when the video ends. No skip
    button; seeking is reset; closing gives up without counting.
    Back (← 返回) and Close (✕) return to the game without unlocking and
-   without penalty. The non-deferred page scripts (Social Bar, Native
-   Banner, Interstitial) load inside the gate when it opens; the
-   popunders load only after a successful unlock (see
-   loadDeferredPageScripts). */
+   without penalty. The page scripts (Social Bar, Native Banner,
+   Interstitial) load inside the gate when it opens. Popunders are
+   removed from this page entirely (see the note above PS_DEFAULTS). */
 var VG_STORE_KEY = "cp_video_unlocks";
 var VG_PROG_KEY = "cp_gate_progress";
 var vgWatchedMem = 0;
@@ -2071,9 +2048,9 @@ vgCountAction("browse");
    target tier. A watched video counts as browse; the Download button
    counts as download; the Browse button counts as browse. When the
    target tier's requirements are met, unlock it exactly like the old
-   video gate did, then close the gate and load the deferred popunder
-   scripts once. Otherwise show what is still missing and return to the
-   action buttons so the user can pick another ad source. */
+   video gate did, then close the gate. Otherwise show what is still
+   missing and return to the action buttons so the user can pick another
+   ad source. */
 function vgCountAction(kind){
 if(!vgTargetHeat){ return; }
 var p = vgProg();
@@ -2087,7 +2064,6 @@ vgSetMsg(t("vgUnlocked").replace("{TIER}", tierName));
 var h = vgTargetHeat;
 setTimeout(function(){
 vgCloseGate();
-loadDeferredPageScripts();
 HEAT = h;
 syncHeatSeg();
 if(currentGame){ openGame(currentGame, true); }
@@ -2125,14 +2101,15 @@ var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgN
 try{ window.open(url, "_blank"); }catch(e){}
 vgCountAction(kind);
 }
-/* Load the non-deferred page scripts inside the tier gate (Social Bar,
-   Native Banner, Interstitial). The psLoaded guard makes this once per
+/* Load the page scripts inside the tier gate (Social Bar, Native
+   Banner, Interstitial). The psLoaded guard makes this once per
    session. The Native Banner renders into its container div pre-placed
-   inside the gate overlay. Popunders are NOT loaded here. */
+   inside the gate overlay. Popunders are removed from this page
+   entirely and never load. */
 function vgLoadGateAds(){
 try{
 var list = (CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)? CFG.ads.pageScripts : PS_DEFAULTS;
-loadPageScripts(list, false);
+loadPageScripts(list);
 }catch(e){}
 }
 function vgOpenGate(targetHeat){

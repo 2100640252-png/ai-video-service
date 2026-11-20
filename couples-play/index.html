@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="color-scheme" content="dark" />
 <link rel="icon" href="data:," />
-<title>情侣情趣游戏 · Couples Play</title>
+<title>情侣情趣游戏</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -220,11 +220,12 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #vgBarFill{height:100%;width:0%;background:var(--accent)}
 #vgTime{font-size:13px;color:var(--ink2);white-space:nowrap}
 #vgMsg{color:var(--gold);font-weight:700;min-height:1.5em;margin:12px 0 0}
+#vgStatus{color:var(--ink2);font-size:14px;margin:8px 0 0;min-height:1.4em}
 #videoGateOverlay .btn{margin:12px 6px 0}
 #videoGateOverlay .vg-top{text-align:left;margin-bottom:4px}
 #videoGateOverlay .vg-top .btn{margin:0}
 #vgReq{color:var(--ink2);font-size:14px;margin:0 0 6px}
-#vgActions{margin-top:6px}
+#vgActions{display:none;margin-top:6px}
 #vgActions .btn{margin:6px 6px 0}
 #vgNativeSlot{margin-top:12px}
 #vgNativeSlot iframe,#vgNativeSlot img{max-width:100%}
@@ -336,7 +337,7 @@ footer p{margin:0;max-width:760px}
 <div id="announceBar" role="note"></div>
 <header class="top">
 <div class="kicker">For Couples · 18+</div>
-<h1><span data-i="title">情侣情趣游戏</span> <span class="en" data-i="titleAlt">/ Couples Play</span></h1>
+<h1><span data-i="title">情侣情趣游戏</span></h1>
 <p class="sub" data-i="subtitle">挑一个，点开就玩。不想玩的——跳过，没人问你为什么。</p>
 <div class="cover-hero" role="img" aria-label="游戏封面：红唇特写，舌头伸出舔着一颗樱桃">
 <svg viewBox="0 0 800 360" aria-hidden="true"><defs><radialGradient id="heroGlow" cx="50%" cy="36%" r="80%"><stop offset="0%" stop-color="#6d1025"/><stop offset="55%" stop-color="#2a0510"/><stop offset="100%" stop-color="#12020a"/></radialGradient><linearGradient id="heroLip" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff6b74"/><stop offset="45%" stop-color="#e02444"/><stop offset="100%" stop-color="#8f0f28"/></linearGradient><linearGradient id="heroLipLow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d81f3e"/><stop offset="100%" stop-color="#7c0c20"/></linearGradient><linearGradient id="heroTongue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff9aa4"/><stop offset="55%" stop-color="#f26074"/><stop offset="100%" stop-color="#d93a52"/></linearGradient></defs><rect width="800" height="360" fill="url(#heroGlow)"/><circle cx="400" cy="150" r="215" fill="#e02444" opacity=".16"/><circle cx="400" cy="138" r="140" fill="#ff6a3d" opacity=".10"/><g opacity=".55"><rect x="52" y="252" width="15" height="52" rx="4" fill="#f3e3c2"/><path d="M59,228 C67,240 67,246 59,254 C51,246 51,240 59,228 Z" fill="#ffb35c"/><rect x="730" y="252" width="15" height="52" rx="4" fill="#f3e3c2"/><path d="M737,228 C745,240 745,246 737,254 C729,246 729,240 737,228 Z" fill="#ffb35c"/></g><circle cx="120" cy="52" r="3" fill="#ffb35c" opacity=".85"/><circle cx="682" cy="44" r="2.6" fill="#ffb35c" opacity=".75"/><circle cx="648" cy="300" r="2.2" fill="#ffb35c" opacity=".5"/><circle cx="150" cy="308" r="2" fill="#ffb35c" opacity=".45"/><path d="M96,138 C196,44 318,66 400,100 C482,66 604,44 704,138 C604,108 486,128 400,128 C314,128 196,108 96,138 Z" fill="url(#heroLip)"/><path d="M96,138 C196,238 604,238 704,138 C604,178 486,158 400,158 C314,158 196,178 96,138 Z" fill="url(#heroLipLow)"/><path d="M196,140 C280,168 520,168 604,140 C520,196 280,196 196,140 Z" fill="#2b020c"/><path d="M338,158 C332,214 340,262 366,292 C384,313 416,313 434,292 C460,262 468,214 462,158 C428,176 372,176 338,158 Z" fill="url(#heroTongue)"/><path d="M400,182 C399,222 399,252 400,282" stroke="#c23347" stroke-width="5" stroke-linecap="round" opacity=".65" fill="none"/><ellipse cx="376" cy="216" rx="9" ry="26" fill="#ffc2c9" opacity=".5" transform="rotate(6 376 216)"/><ellipse cx="428" cy="196" rx="6" ry="17" fill="#ffc2c9" opacity=".38" transform="rotate(-7 428 196)"/><ellipse cx="400" cy="300" rx="7" ry="4.5" fill="#ffd9de" opacity=".55"/><path d="M150,128 C230,84 320,82 372,98" fill="none" stroke="#ffb3ba" stroke-width="7" stroke-linecap="round" opacity=".55"/><path d="M452,94 C540,76 620,92 664,122" fill="none" stroke="#ffb3ba" stroke-width="6" stroke-linecap="round" opacity=".4"/><path d="M238,196 C300,220 360,226 400,226" fill="none" stroke="#ff7d88" stroke-width="5" stroke-linecap="round" opacity=".35"/><path d="M404,306 C410,326 424,338 442,344" fill="none" stroke="#6d8a3f" stroke-width="5" stroke-linecap="round"/><circle cx="400" cy="326" r="24" fill="#a31226"/><circle cx="400" cy="326" r="24" fill="none" stroke="#7c0c20" stroke-width="2" opacity=".6"/><ellipse cx="391" cy="317" rx="7" ry="5" fill="#ff9aa4" opacity=".95" transform="rotate(-24 391 317)"/><path d="M96,44 l3.4,8 8,3.4 -8,3.4 -3.4,8 -3.4,-8 -8,-3.4 8,-3.4z" fill="#e3a94f"/><path d="M688,214 l2.6,6.2 6.2,2.6 -6.2,2.6 -2.6,6.2 -2.6,-6.2 -6.2,-2.6 6.2,-2.6z" fill="#e3a94f" opacity=".85"/></svg>
@@ -417,11 +418,13 @@ footer p{margin:0;max-width:760px}
 </div>
 </div>
 
-<!-- Tier gate: complete ads to unlock heat tier 2 / 3.
-     Heat 2 = 1 ad action (watch / download / browse).
-     Heat 3 = (1 download ad + 1 browse ad) OR 5 video ads.
-     Link ads count only after the time threshold on the ad tab.
-     Back returns without penalty. -->
+<!-- Tier gate (Gate v4): direct-jump ads to unlock heat tier 2 / 3.
+     Heat 2 = 1 download ad (60s away time).
+     Heat 3 = 1 download ad (60s) + 1 browse ad (30s).
+     No choice buttons — the gate jumps straight to the next required
+     ad. Away time accumulates (localStorage cp_gate_away). The
+     5-video path still exists in the unlock rule but is not offered
+     in the gate. Back returns without penalty. -->
 <div id="videoGateOverlay" role="dialog" aria-modal="true" aria-label="视频广告">
 <div class="vg-box">
 <div class="vg-top"><button class="btn" id="vgBackBtn" data-i="vgBack">← 返回</button></div>
@@ -429,6 +432,7 @@ footer p{margin:0;max-width:760px}
 <h3 id="vgTitle"></h3>
 <p id="vgReq"></p>
 <p id="vgProgress"></p>
+<p id="vgStatus"></p>
 <p id="vgVideoInfo"></p>
 <p id="vgVideoAlt" class="vg-alt"></p>
 <div id="vgActions">
@@ -534,7 +538,7 @@ gateEnter:{zh:"我们确认，进入",en:"We confirm — Enter"},
 gateLeave:{zh:"离开",en:"Leave"},
 gateBye:{zh:"好的，未满 18 岁或还没准备好，就先不要进入啦。",en:"No problem — please come back only when you're 18+ and both ready."},
 title:{zh:"情侣情趣游戏",en:"情侣情趣游戏"},
-titleAlt:{zh:"/ Couples Play",en:"/ Couples Play"},
+titleAlt:{zh:"",en:""},
 subtitle:{zh:"灯调暗，衣服穿少点。挑一个，开始。",en:"Lights low, clothes optional. Pick one — begin."},
 langLabel:{zh:"语言 Language",en:"Language 语言"},
 heatLabel:{zh:"尺度 Heat",en:"Heat 尺度"},
@@ -591,8 +595,11 @@ vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
 vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
 vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
-vgReq2:{zh:"看满 1 个广告即可解锁",en:"Complete 1 ad to unlock"},
-vgReq3:{zh:"完成 1 个下载广告 + 1 个浏览广告，或看满 {NEED} 个视频广告，即可解锁",en:"Complete 1 download ad + 1 browse ad, or watch {NEED} video ads, to unlock"},
+vgReq2:{zh:"将自动打开下载广告，看满 60 秒即可解锁升温",en:"Download ad will open automatically — watch 60s to unlock"},
+vgReq3:{zh:"将依次打开下载广告（60秒）和浏览广告（30秒），完成后解锁大胆",en:"Download ad (60s) then browse ad (30s) will open in turn — unlock Bold when done"},
+vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
+vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
+vgOpening:{zh:"正在打开广告…",en:"Opening ad…"},
 vgProg2:{zh:"已完成 {GOT}/1",en:"Done {GOT}/1"},
 vgProg3:{zh:"下载 {DL}/1 · 浏览 {BR}/1 · 视频 {V}/{NEED}",en:"Download {DL}/1 · Browse {BR}/1 · Videos {V}/{NEED}"},
 vgNeedDl:{zh:"还差 1 个下载广告",en:"1 download ad to go"},
@@ -601,7 +608,7 @@ noticeTitle:{zh:"内含第三方广告！如若你正与你的性伴侣准备开
 noticeAck:{zh:"收到",en:"Got it"},
 vgShort:{zh:"你累计看了 {X} 秒，还差 {Y} 秒，请重新点击广告继续看",en:"You have watched {X}s in total, {Y}s to go — tap the ad again to keep watching"},
 vgVideoCount:{zh:"视频广告 ({GOT}/{NEED})",en:"Video ads ({GOT}/{NEED})"},
-vgVideoAlt:{zh:"不想下载？看满 {NEED} 个视频广告也可解锁大胆",en:"Don't want to download? Watch {NEED} video ads to unlock Bold instead"},
+vgVideoAlt:{zh:"",en:""},
 vgNeedVideos:{zh:"还差 {N} 个视频广告（或 1 个下载广告 + 1 个浏览广告）",en:"{N} more video ad(s) to go (or 1 download ad + 1 browse ad)"},
 refBtn:{zh:"💰 推广返现",en:"💰 Refer & Earn"},
 refTitle:{zh:"推广返现",en:"Refer & Earn"},
@@ -620,7 +627,7 @@ refDownload:{zh:"下载 App",en:"Download the App"},
 refCopy:{zh:"复制邀请码",en:"Copy invite code"},
 refCopied:{zh:"已复制邀请码",en:"Invite code copied"},
 refLogout:{zh:"退出登录",en:"Log out"},
-refShare:{zh:"我在玩情侣情趣游戏，用我的邀请码 {CODE} 注册，解锁大胆挡位我们都能赚钱！",en:"I'm playing Couples Play — register with my invite code {CODE}. When you unlock the Bold tier, we both earn!"},
+refShare:{zh:"我在玩情侣情趣游戏，用我的邀请码 {CODE} 注册，解锁大胆挡位我们都能赚钱！",en:"I'm playing 情侣情趣游戏 — register with my invite code {CODE}. When you unlock the Bold tier, we both earn!"},
 refWorking:{zh:"处理中…",en:"Working…"},
 refErrUser:{zh:"用户名 2–20 个字符，只能用中文、字母或数字",en:"Username must be 2–20 characters: Chinese, letters or digits only"},
 refErrPass:{zh:"密码至少 6 位",en:"Password must be at least 6 characters"},
@@ -1587,7 +1594,7 @@ document.getElementById("fbDownload").onclick = function(){
 var blob = new Blob([fbLogText()], {type:"text/plain;charset=utf-8"});
 var a = document.createElement("a");
 a.href = URL.createObjectURL(blob);
-a.download = "couples-play-feedback.txt";
+a.download = "情侣情趣游戏-反馈.txt";
 document.body.appendChild(a); a.click(); document.body.removeChild(a);
 setTimeout(function(){ URL.revokeObjectURL(a.href);}, 2000);
 };
@@ -2143,10 +2150,10 @@ var bw = document.getElementById("vgBarWrap");
 if(v){ v.style.display = (st === "video" || st === "playbtn")? "block": "none"; }
 if(pb){ pb.style.display = (st === "playbtn")? "inline-block": "none"; }
 if(rb){ rb.style.display = (st === "noad")? "inline-block": "none"; }
-/* Action buttons stay available in actions / loading / noad, so the user
-   can always pick another ad source instead of getting stuck. They hide
-   only while a video is playing. */
-if(ab){ ab.style.display = (st === "actions" || st === "loading" || st === "noad")? "block": "none"; }
+/* Gate v4: the choice buttons are never shown — the gate jumps
+   straight to the next required ad. Keep the container hidden in
+   every state (the buttons stay in the DOM, harmless). */
+if(ab){ ab.style.display = "none"; }
 if(bw){ bw.style.display = (st === "video" || st === "playbtn")? "flex": "none"; }
 }
 function vgFire(urls){
@@ -2178,6 +2185,8 @@ var fl0 = document.getElementById("vgBarFill"); if(fl0){ fl0.style.width = "0%";
 vgShowState("noad");
 }
 function vgCloseGate(){
+if(vgJumpTimer){ clearTimeout(vgJumpTimer); vgJumpTimer = null; }
+FW.hide();
 var ov = document.getElementById("videoGateOverlay");
 if(ov){ ov.classList.remove("open"); }
 vgVideoSeq++;
@@ -2324,10 +2333,25 @@ var o = vgGateOpts();
 var threshold = (pend.kind === "download")? o.download : o.browse;
 if(vgAway[pend.kind] >= threshold){
 vgCountAction(pend.kind);
+FW.update();
+if(vgTargetHeat && vgIsUnlocked(vgTargetHeat)){
+/* Tier complete: hide the overlay, the unlock message is already
+   shown by vgCountAction — do NOT auto-jump again. */
+FW.hide();
+} else if(vgTargetHeat){
+/* Banked one action but the tier still needs more — jump to the
+   next required ad automatically (Gate v4: no choice buttons). */
+if(vgJumpTimer){ clearTimeout(vgJumpTimer); vgJumpTimer = null; }
+vgJumpTimer = setTimeout(function(){ vgJumpTimer = null; vgAutoJump(); }, 1500);
+}
 } else {
 var need = threshold - vgAway[pend.kind];
 vgSetMsg(t("vgShort").split("{X}").join(String(vgAway[pend.kind])).split("{Y}").join(String(need)));
-if(vgTargetHeat){ vgShowState("actions"); }
+FW.update();
+if(vgTargetHeat){
+if(vgJumpTimer){ clearTimeout(vgJumpTimer); vgJumpTimer = null; }
+vgJumpTimer = setTimeout(function(){ vgJumpTimer = null; vgAutoJump(); }, 1500);
+}
 }
 }
 if(typeof document !== "undefined" && document.addEventListener){
@@ -2361,6 +2385,124 @@ vgPending = {kind: kind};
 try{ window.open(url, "_blank"); }catch(e){}
 vgSetMsg("");
 }
+/* ================= Floating-window bridge (Gate v4) =================
+   Native Android side is a Capacitor 6 plugin named "FloatingWindow"
+   (hasPermission / requestPermission / show / update / hide). On the
+   website there is no Capacitor, so every call below silently no-ops
+   and never throws — the gate flow works exactly the same, just
+   without the overlay. The floating window shows the live ad
+   progress (elapsed vs threshold) and task status while the player
+   is on the ad page. Plugin methods return Promises; every call is
+   guarded with .catch so a rejection never surfaces. */
+var FW = {
+hasPlugin: function(){
+return !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FloatingWindow);
+},
+state: function(){
+var p = vgProg() || {browse: 0, download: 0, videos: 0};
+var kind = (vgPending && vgPending.kind) || "download";
+var o = vgGateOpts();
+var threshold = (kind === "download")? o.download : o.browse;
+return {
+kind: kind,
+threshold: threshold,
+elapsed: (vgAway && vgAway[kind]) || 0,
+download: p.download,
+browse: p.browse,
+videos: p.videos,
+videosNeed: vgVideosNeeded(),
+tier: (vgTargetHeat === 3)? "大胆" : "升温"
+};
+},
+hasPermission: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(false); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.hasPermission().then(function(r){ return !!(r && r.granted); }).catch(function(){ return false; });
+}catch(e){ return Promise.resolve(false); }
+},
+requestPermission: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.requestPermission().catch(function(){});
+}catch(e){ return Promise.resolve(); }
+},
+show: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.show(FW.state()).catch(function(){});
+}catch(e){ return Promise.resolve(); }
+},
+update: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.update(FW.state()).catch(function(){});
+}catch(e){ return Promise.resolve(); }
+},
+hide: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.hide().catch(function(){});
+}catch(e){ return Promise.resolve(); }
+}
+};
+function vgSetStatus(s){ var el = document.getElementById("vgStatus"); if(el){ el.textContent = s || ""; } }
+var vgJumpTimer = null;
+/* Gate v4: the next required ad kind for the target tier, or null
+   when the target tier is already unlocked. Order is fixed:
+   download first, then browse. */
+function vgNextAd(){
+var p = vgProg() || {browse: 0, download: 0, videos: 0};
+if(vgTargetHeat === 3){
+if(p.download < 1) return "download";
+if(p.browse < 1) return "browse";
+return null;
+}
+if(vgTargetHeat === 2){
+if(p.download < 1 && p.browse < 1 && p.videos < 1) return "download";
+return null;
+}
+return null;
+}
+function vgOpenAdAndShow(kind){
+vgSetStatus(t("vgOpening"));
+vgOpenLink(kind);
+FW.show();
+}
+/* Gate v4: jump straight to the next required ad — no choosing.
+   On the app, the floating-window overlay permission is requested
+   first (the plugin opens system settings); the jump waits until
+   the permission is granted. On the website there is no plugin, so
+   the jump happens immediately. */
+function vgAutoJump(){
+var kind = vgNextAd();
+if(!kind){
+var tierName = (vgTargetHeat === 3)? t("tier3"): t("tier2");
+vgSetMsg(t("vgUnlocked").replace("{TIER}", tierName));
+vgSetStatus("");
+FW.hide();
+return;
+}
+if(FW.hasPlugin()){
+FW.hasPermission().then(function(granted){
+if(granted){
+var pb0 = document.getElementById("vgPlayBtn");
+if(pb0){ pb0.style.display = "none"; }
+vgOpenAdAndShow(kind);
+return;
+}
+FW.requestPermission();
+vgSetStatus(t("vgPermNeed"));
+var pb = document.getElementById("vgPlayBtn");
+if(pb){
+pb.textContent = t("vgContinue");
+pb.style.display = "inline-block";
+pb.onclick = function(){ pb.style.display = "none"; vgAutoJump(); };
+}
+}).catch(function(){ vgOpenAdAndShow(kind); });
+return;
+}
+vgOpenAdAndShow(kind);
+}
 /* Load the page scripts inside the tier gate (Social Bar, Native
    Banner, Interstitial). The psLoaded guard makes this once per
    session. The Native Banner renders into its container div pre-placed
@@ -2377,10 +2519,14 @@ vgTargetHeat = targetHeat;
 var ov = document.getElementById("videoGateOverlay");
 if(!ov) return;
 vgSetMsg("");
+vgSetStatus("");
+var pb = document.getElementById("vgPlayBtn");
+if(pb){ pb.style.display = "none"; }
 vgUpdateGateText();
 ov.classList.add("open");
 vgLoadGateAds();
-vgShowState("actions");
+/* Gate v4: no choice buttons — jump straight to the next ad. */
+vgAutoJump();
 }
 function vgWireVideo(){
 var v = document.getElementById("vgVideo");
@@ -2677,8 +2823,8 @@ loadRemoteConfig();
    the gate), fetch the version manifest; only when its versionCode is
    greater than 9 AND apkUrl is present do we show the top banner.
    Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 12;
-var APP_VERSION_NAME = "2.1";
+var APP_VERSION_CODE = 13;
+var APP_VERSION_NAME = "2.2";
 var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
 var updateApkUrl = "";
 function checkForUpdate(){

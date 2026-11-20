@@ -1,7 +1,7 @@
 {
-  "versionCode": 15,
-  "versionName": "2.4",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.4/-v2.4.apk",
-  "notes": "悬浮窗修好了：插件已注册，点开锁住的挡位会先问悬浮窗权限，广告进度悬浮窗会跟着广告页面走。",
-  "publishedAt": "2026-11-20T17:22:48Z"
+  "versionCode": 16,
+  "versionName": "2.5",
+  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.5/-v2.5.apk",
+  "notes": "修了横幅遮住收到按钮：广告位固定在自己的位置，不再浮到入口弹窗上面。",
+  "publishedAt": "2026-11-20T18:25:56Z"
 }

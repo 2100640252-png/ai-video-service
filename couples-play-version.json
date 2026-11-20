@@ -1,7 +1,7 @@
 {
-  "versionCode": 14,
-  "versionName": "2.3",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.3/-v2.3.apk",
-  "notes": "更新提示修好了：清单走更稳的 CDN，超时放宽到 10 秒；2.1 打开就能收到 2.3 更新提示。",
-  "publishedAt": "2026-11-20T17:05:49Z"
+  "versionCode": 15,
+  "versionName": "2.4",
+  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.4/-v2.4.apk",
+  "notes": "悬浮窗修好了：插件已注册，点开锁住的挡位会先问悬浮窗权限，广告进度悬浮窗会跟着广告页面走。",
+  "publishedAt": "2026-11-20T17:22:48Z"
 }

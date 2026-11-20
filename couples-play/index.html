@@ -56,6 +56,9 @@ header.top h1 .en{font-family:"Cormorant Garamond",serif;font-weight:600}
 .seg button{border:0;background:transparent;color:var(--ink2);border-radius:999px;padding:8px 16px;min-height:40px;font-weight:700;font-size:14px}
 .seg button.on{background:var(--accent);color:#fff}
 .seg.heat button.on{background:var(--accent2)}
+/* Play-session countdown (trial 3 min / full 24h). Shown only while a
+   session is active; hidden otherwise. */
+.sess-timer{display:inline-block;font-weight:700;font-size:13px;color:var(--gold);background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.45);border-radius:999px;padding:6px 12px;margin-left:8px;white-space:nowrap}
 .tool-label{font-size:12.5px;color:var(--ink2);font-weight:700;letter-spacing:.08em}
 
 /* ---------- Safety strip ---------- */
@@ -361,6 +364,7 @@ footer p{margin:0;max-width:760px}
 <button data-heat="3" data-i="heat3">大胆 Spicy</button>
 </div>
 <button class="btn gold" id="refBtn" data-i="refBtn">💰 推广返现</button>
+<span class="sess-timer" id="sessTimer" style="display:none"></span>
 </div>
 </header>
 
@@ -401,6 +405,7 @@ footer p{margin:0;max-width:760px}
 <button data-heat="2" data-i="tier2">升温</button>
 <button data-heat="3" data-i="tier3">大胆</button>
 </div>
+<span class="sess-timer" id="sessTimerGame" style="display:none"></span>
 </div>
 <div class="p-cover" id="pCover"></div>
 <div id="pBody"></div>
@@ -421,13 +426,17 @@ footer p{margin:0;max-width:760px}
 </div>
 </div>
 
-<!-- Tier gate (Gate v4): direct-jump ads to unlock heat tier 2 / 3.
-     Heat 2 = 1 download ad (60s away time).
-     Heat 3 = 1 download ad (60s) + 1 browse ad (30s).
-     No choice buttons — the gate jumps straight to the next required
-     ad. Away time accumulates (localStorage cp_gate_away). The
-     5-video path still exists in the unlock rule but is not offered
-     in the gate. Back returns without penalty. -->
+<!-- Tier gate (Session model, 2026-11-20): time-limited access.
+     A session unlocks BOTH heat 2 (升温) and heat 3 (大胆).
+     - Watch 1 video ad (or finish 1 browse ad, 30s) → 3-minute trial.
+     - Finish 1 download ad (60s away time) → 24 hours, unlimited.
+     When the session expires the tiers lock immediately (HEAT back
+     to 1). The gate shows the choice buttons — each action has a
+     different reward. Away time accumulates (localStorage
+     cp_gate_away). Back returns without penalty.
+     NOTE: the 24h grant is based on the download click + 60s stay.
+     The page cannot verify an actual app install (browser
+     restriction); true install data lives in the ad dashboards. -->
 <div id="videoGateOverlay" role="dialog" aria-modal="true" aria-label="视频广告">
 <div class="vg-box">
 <div class="vg-top"><button class="btn" id="vgBackBtn" data-i="vgBack">← 返回</button></div>
@@ -598,8 +607,8 @@ vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
 vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
 vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
-vgReq2:{zh:"将自动打开下载广告，看满 60 秒即可解锁升温",en:"Download ad will open automatically — watch 60s to unlock"},
-vgReq3:{zh:"将依次打开下载广告（60秒）和浏览广告（30秒），完成后解锁大胆",en:"Download ad (60s) then browse ad (30s) will open in turn — unlock Bold when done"},
+vgReq2:{zh:"下载广告看满 60 秒，畅玩 24 小时；看视频广告，试玩 3 分钟",en:"Watch a download ad for 60s for 24h play; watch a video ad for a 3-min trial"},
+vgReq3:{zh:"下载广告看满 60 秒，畅玩 24 小时；看视频或浏览广告 30 秒，试玩 3 分钟",en:"Watch a download ad for 60s for 24h play; watch a video or browse ad for 30s for a 3-min trial"},
 vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
 vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
 vgOpening:{zh:"正在打开广告…",en:"Opening ad…"},
@@ -612,6 +621,8 @@ noticeAck:{zh:"收到",en:"Got it"},
 vgShort:{zh:"你累计看了 {X} 秒，还差 {Y} 秒，请重新点击广告继续看",en:"You have watched {X}s in total, {Y}s to go — tap the ad again to keep watching"},
 vgVideoCount:{zh:"视频广告 ({GOT}/{NEED})",en:"Video ads ({GOT}/{NEED})"},
 vgVideoAlt:{zh:"",en:""},
+sessTrial:{zh:"试玩剩余",en:"Trial left"},
+sessFull:{zh:"畅玩剩余",en:"Play time left"},
 vgNeedVideos:{zh:"还差 {N} 个视频广告（或 1 个下载广告 + 1 个浏览广告）",en:"{N} more video ad(s) to go (or 1 download ad + 1 browse ad)"},
 refBtn:{zh:"💰 推广返现",en:"💰 Refer & Earn"},
 refTitle:{zh:"推广返现",en:"Refer & Earn"},
@@ -1953,6 +1964,105 @@ var v = parseInt(p.videos, 10); if(isNaN(v) || v < 0) v = 0;
 vgProgMem = {browse: p.browse? 1: 0, download: p.download? 1: 0, videos: v};
 if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(vgProgMem)); }catch(e){} }
 }
+/* === Play sessions (time-limited access, 2026-11-20) ===
+   A session unlocks BOTH heat 2 (升温) and heat 3 (大胆) for a limited
+   time — it is NOT a permanent unlock.
+   - trial: watch 1 video ad (or finish 1 browse ad, 30s) → 3 minutes.
+   - full: finish 1 download ad (60s away time) → 24 hours.
+   Stored in localStorage cp_play_session = {kind, expiresAt, grantedAt}.
+   When the session expires the tiers lock immediately (HEAT back to 1).
+   NOTE: the game CANNOT verify an actual app install from the page
+   (browser restriction, no API) — the 24h grant is based on the
+   download click + 60s stay (engagement). True install data lives in
+   the Adsterra/HilltopAds dashboards; a postback into Supabase would
+   be needed to verify an install. */
+var CP_SESS_KEY = "cp_play_session";
+var CP_TRIAL_MS = 3*60*1000;
+var CP_FULL_MS = 24*60*60*1000;
+var cpSessMem = null;
+function cpSession(){
+var s = cpSessMem;
+if(s && typeof s.expiresAt === "number"){
+if(Date.now() < s.expiresAt){ return s; }
+cpSessMem = null;
+if(vgLsOk){ try{ localStorage.removeItem(CP_SESS_KEY); }catch(e){} }
+return null;
+}
+if(vgLsOk){
+try{
+var raw = localStorage.getItem(CP_SESS_KEY);
+if(raw){
+var o = JSON.parse(raw);
+var exp = parseInt(o && o.expiresAt, 10);
+if(!isNaN(exp) && Date.now() < exp){
+cpSessMem = {kind: (o.kind === "full")? "full": "trial", expiresAt: exp, grantedAt: parseInt(o.grantedAt,10)||0};
+return cpSessMem;
+}
+localStorage.removeItem(CP_SESS_KEY);
+}
+}catch(e){}
+}
+return null;
+}
+function cpGrantSession(kind){
+var now = Date.now();
+var cur = cpSession();
+/* A full (24h) session is never downgraded by a trial grant. */
+if(cur && cur.kind === "full" && kind !== "full"){ return cur; }
+var ms = (kind === "full")? CP_FULL_MS : CP_TRIAL_MS;
+var s = {kind: (kind === "full")? "full": "trial", expiresAt: now + ms, grantedAt: now};
+cpSessMem = s;
+if(vgLsOk){ try{ localStorage.setItem(CP_SESS_KEY, JSON.stringify(s)); }catch(e){} }
+try{ syncHeatSeg(); }catch(e){}
+try{ cpUpdateTimer(); }catch(e){}
+/* Referral: a session unlocks Bold (tier 3). Best-effort; the DB
+   UNIQUE constraints make repeat reports harmless. */
+try{ refReportUnlock(); }catch(e){}
+return s;
+}
+function cpSessionRemainingMs(){
+var s = cpSession();
+if(!s) return 0;
+return Math.max(0, s.expiresAt - Date.now());
+}
+/* Session countdown display + expiry enforcement. Runs once a second.
+   When a session expires: tiers lock immediately (HEAT back to 1); if
+   the user is inside a game it re-deals at Mild so no locked content
+   stays on screen. */
+var cpSessWasActive = false;
+function cpFmtRemain(ms){
+var s = Math.max(0, Math.ceil(ms/1000));
+var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+function p2(n){ return (n<10? "0":"") + n; }
+if(h > 0){ return h + ":" + p2(m) + ":" + p2(sec); }
+return m + ":" + p2(sec);
+}
+function cpUpdateTimer(){
+var s = cpSession();
+var txt = "";
+if(s){
+var label = (s.kind === "full")? t("sessFull") : t("sessTrial");
+txt = label + " " + cpFmtRemain(s.expiresAt - Date.now());
+}
+var a = document.getElementById("sessTimer");
+var b = document.getElementById("sessTimerGame");
+if(a){ a.style.display = txt? "inline-block": "none"; a.textContent = txt; }
+if(b){ b.style.display = txt? "inline-block": "none"; b.textContent = txt; }
+}
+function cpTickSession(){
+var s = cpSession();
+var active = !!s;
+cpUpdateTimer();
+if(cpSessWasActive && !active){
+/* Session just expired — lock the tiers immediately. */
+if(HEAT > 1){ HEAT = 1; }
+try{ syncHeatSeg(); }catch(e){}
+try{ if(typeof currentGame !== "undefined" && currentGame){ openGame(currentGame, true); } }catch(e){}
+try{ vgEnforceHeat(); }catch(e){}
+}
+cpSessWasActive = active;
+}
+setInterval(cpTickSession, 1000);
 /* Built-in fallback: the gate must never silently vanish because the remote
    config fetch failed or timed out (CFG is null until it loads). When the
    remote config carries ads.videoGate it overrides this; only an explicit
@@ -2002,12 +2112,14 @@ var r2 = parseInt(g.required && g.required["2"], 10); if(isNaN(r2) || r2 < 0) r2
 var r3 = parseInt(g.required && g.required["3"], 10); if(isNaN(r3) || r3 < 0) r3 = 2;
 return {tag: tags[0], tags: tags, r2: r2, r3: r3};
 }
+/* Session model (2026-11-20): heat 2 and 3 are unlocked ONLY while a
+   play session is active. A session (trial 3 min / full 24h) unlocks
+   BOTH tiers. When it expires the tiers lock immediately. The old
+   count-based rule is kept in vgProg for the gate's bookkeeping, but
+   it no longer unlocks anything by itself. */
 function vgIsUnlocked(heat){
 if(heat <= 1) return true;
-var p = vgProg();
-if(heat === 2) return (p.browse >= 1 || p.download >= 1);
-if(heat === 3) return (p.browse >= 1 && p.download >= 1) || (p.videos >= vgVideosNeeded());
-return false;
+return !!cpSession();
 }
 function vgEnforceHeat(){
 if(vgGateCfg() && HEAT > 1 && !vgIsUnlocked(HEAT)){ HEAT = 1; syncHeatSeg(); }
@@ -2157,10 +2269,11 @@ var bw = document.getElementById("vgBarWrap");
 if(v){ v.style.display = (st === "video" || st === "playbtn")? "block": "none"; }
 if(pb){ pb.style.display = (st === "playbtn")? "inline-block": "none"; }
 if(rb){ rb.style.display = (st === "noad")? "inline-block": "none"; }
-/* Gate v4: the choice buttons are never shown — the gate jumps
-   straight to the next required ad. Keep the container hidden in
-   every state (the buttons stay in the DOM, harmless). */
-if(ab){ ab.style.display = VG_VIDEO_TEST? "block": "none"; }
+/* Session model (2026-11-20): the choice buttons ARE shown — the user
+   picks video (3-min trial), download (24h) or browse (3-min trial).
+   Each action has a different reward, so there is no single "next
+   required ad" to auto-jump to. */
+if(ab){ ab.style.display = (st === "actions" || VG_VIDEO_TEST)? "block": "none"; }
 if(bw){ bw.style.display = (st === "video" || st === "playbtn")? "flex": "none"; }
 }
 function vgFire(urls){
@@ -2265,6 +2378,11 @@ var p = vgProg();
 if(kind === "browse"){ p.browse = 1; }
 if(kind === "download"){ p.download = 1; }
 vgSetProg(p);
+/* Session model: a completed browse/video action grants a 3-minute
+   trial; a completed download action grants 24 hours. The session
+   is what unlocks the tiers (see vgIsUnlocked). */
+if(kind === "browse"){ try{ cpGrantSession("trial"); }catch(e){} }
+if(kind === "download"){ try{ cpGrantSession("full"); }catch(e){} }
 if(!vgTargetHeat){ return; }
 vgUpdateGateText();
 if(vgIsUnlocked(vgTargetHeat)){
@@ -2276,9 +2394,8 @@ vgCloseGate();
 HEAT = h;
 syncHeatSeg();
 if(currentGame){ openGame(currentGame, true); }
-/* Referral: report a Bold (tier 3) unlock to Supabase so the
-   inviter can be credited. Best-effort, never blocks the game. */
-if(h === 3){ try{ refReportUnlock(); }catch(e){} }
+/* Referral is reported in cpGrantSession (a session unlocks Bold),
+   so it is not repeated here. */
 }, 900);
 } else {
 var miss = "";
@@ -2475,6 +2592,27 @@ vgSetStatus(t("vgOpening"));
 vgOpenLink(kind);
 FW.show();
 }
+/* Session model: the user picks an ad (download / browse). On the
+   app, the floating-window permission is requested first (same as
+   the old v4 auto-jump); on the website it opens immediately. */
+function vgPickAd(kind){
+if(kind === "video"){ vgLoadAndPlay(); return; }
+if(FW.hasPlugin()){
+FW.hasPermission().then(function(granted){
+if(granted){ vgOpenAdAndShow(kind); return; }
+FW.requestPermission();
+vgSetStatus(t("vgPermNeed"));
+var pb = document.getElementById("vgPlayBtn");
+if(pb){
+pb.textContent = t("vgContinue");
+pb.style.display = "inline-block";
+pb.onclick = function(){ pb.style.display = "none"; vgPickAd(kind); };
+}
+}).catch(function(){ vgOpenAdAndShow(kind); });
+return;
+}
+vgOpenAdAndShow(kind);
+}
 /* Gate v4: jump straight to the next required ad — no choosing.
    On the app, the floating-window overlay permission is requested
    first (the plugin opens system settings); the jump waits until
@@ -2532,11 +2670,10 @@ if(pb){ pb.style.display = "none"; }
 vgUpdateGateText();
 ov.classList.add("open");
 vgLoadGateAds();
-/* Gate v4: no choice buttons — jump straight to the next ad.
-   Except with ?vgvideo=1 (video-path test hook): show the buttons
-   and wait for the user to pick one. */
-if(VG_VIDEO_TEST){ var ab = document.getElementById("vgActions"); if(ab){ ab.style.display = "block"; } }
-else{ vgAutoJump(); }
+/* Session model: show the choice buttons — video (3-min trial),
+   download (24h) or browse (3-min trial). No auto-jump: each action
+   has a different reward, so the user picks. */
+vgShowState("actions");
 }
 function vgWireVideo(){
 var v = document.getElementById("vgVideo");
@@ -2580,9 +2717,9 @@ if(vgRetryBtn){ vgRetryBtn.onclick = function(){ vgLoadAndPlay(); }; }
 var vgVideoBtn = document.getElementById("vgVideoBtn");
 if(vgVideoBtn){ vgVideoBtn.onclick = function(){ vgLoadAndPlay(); }; }
 var vgDlBtn = document.getElementById("vgDlBtn");
-if(vgDlBtn){ vgDlBtn.onclick = function(){ vgOpenLink("download"); }; }
+if(vgDlBtn){ vgDlBtn.onclick = function(){ vgPickAd("download"); }; }
 var vgBrowseBtn = document.getElementById("vgBrowseBtn");
-if(vgBrowseBtn){ vgBrowseBtn.onclick = function(){ vgOpenLink("browse"); }; }
+if(vgBrowseBtn){ vgBrowseBtn.onclick = function(){ vgPickAd("browse"); }; }
 var vgPlayBtn = document.getElementById("vgPlayBtn");
 if(vgPlayBtn){ vgPlayBtn.onclick = function(){
 var v = document.getElementById("vgVideo");
@@ -2835,8 +2972,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 16;
-var APP_VERSION_NAME = "2.5";
+var APP_VERSION_CODE = 17;
+var APP_VERSION_NAME = "2.6";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

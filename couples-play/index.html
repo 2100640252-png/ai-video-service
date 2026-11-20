@@ -2144,6 +2144,10 @@ if(d){ d.textContent = t("vgDlBtn").split("{S}").join(String(o.download)); }
 var b = document.getElementById("vgBrowseBtn");
 if(b){ b.textContent = t("vgBrowseBtn").split("{S}").join(String(o.browse)); }
 }
+/* Video-path test hook: open the game with ?vgvideo=1 and the gate
+   shows the three choice buttons (incl. "看视频广告") instead of
+   auto-jumping. Normal users never see this (no param = v4 auto-jump). */
+var VG_VIDEO_TEST = (typeof location !== "undefined") && /[?&]vgvideo=1(?:&|$)/.test(location.search || "");
 function vgShowState(st){
 var v = document.getElementById("vgVideo");
 var pb = document.getElementById("vgPlayBtn");
@@ -2156,7 +2160,7 @@ if(rb){ rb.style.display = (st === "noad")? "inline-block": "none"; }
 /* Gate v4: the choice buttons are never shown — the gate jumps
    straight to the next required ad. Keep the container hidden in
    every state (the buttons stay in the DOM, harmless). */
-if(ab){ ab.style.display = "none"; }
+if(ab){ ab.style.display = VG_VIDEO_TEST? "block": "none"; }
 if(bw){ bw.style.display = (st === "video" || st === "playbtn")? "flex": "none"; }
 }
 function vgFire(urls){
@@ -2528,8 +2532,11 @@ if(pb){ pb.style.display = "none"; }
 vgUpdateGateText();
 ov.classList.add("open");
 vgLoadGateAds();
-/* Gate v4: no choice buttons — jump straight to the next ad. */
-vgAutoJump();
+/* Gate v4: no choice buttons — jump straight to the next ad.
+   Except with ?vgvideo=1 (video-path test hook): show the buttons
+   and wait for the user to pick one. */
+if(VG_VIDEO_TEST){ var ab = document.getElementById("vgActions"); if(ab){ ab.style.display = "block"; } }
+else{ vgAutoJump(); }
 }
 function vgWireVideo(){
 var v = document.getElementById("vgVideo");

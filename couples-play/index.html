@@ -2324,15 +2324,14 @@ if(req){ req.textContent = (vgTargetHeat === 3)? t("vgReq3").split("{NEED}").joi
 var p = vgProg() || {browse: 0, download: 0, videos: 0};
 var pr = document.getElementById("vgProgress");
 if(pr){
-if(vgTargetHeat === 3){
-pr.textContent = t("vgProg3").split("{DL}").join(String(p.download)).split("{BR}").join(String(p.browse)).split("{V}").join(String(p.videos)).split("{NEED}").join(String(vgVideosNeeded()));
-} else {
-var got = (p.browse || p.download)? 1: 0;
-pr.textContent = t("vgProg2").split("{GOT}").join(String(got));
-}
+/* Session model (2026-11-20): the progress line shows the ad-credit
+   count toward the 3-minute trial, NOT the old Gate v3/v4 counters
+   ("已完成 x/1", "视频广告 x/5") which no longer mean anything and
+   confused users and testers. */
+try{ pr.textContent = t("vgAdCount").split("{GOT}").join(String(cpAdCredits())).split("{NEED}").join(String(CP_CREDITS_FOR_TRIAL)); }catch(e){ pr.textContent = ""; }
 }
 var vi = document.getElementById("vgVideoInfo");
-if(vi){ vi.textContent = t("vgVideoCount").split("{GOT}").join(String(p.videos)).split("{NEED}").join(String(vgVideosNeeded())); }
+if(vi){ vi.textContent = ""; }
 var va = document.getElementById("vgVideoAlt");
 if(va){ va.textContent = (vgTargetHeat === 3)? t("vgVideoAlt").split("{NEED}").join(String(vgVideosNeeded())): ""; }
 }
@@ -2497,6 +2496,9 @@ try{ miss = t("vgAdCount").split("{GOT}").join(String(cpAdCredits())).split("{NE
 if(kind === "download" && cpPendingInstall()){
 miss += " " + t("vgDlVerify");
 }
+/* Clear the stale "正在打开广告…" status set when the ad was opened,
+   so the user sees the count / verifying message, not the old status. */
+vgSetStatus("");
 vgSetMsg(miss);
 vgShowState("actions");
 }
@@ -2553,22 +2555,19 @@ vgCountAction(pend.kind);
 FW.update();
 if(vgTargetHeat && vgIsUnlocked(vgTargetHeat)){
 /* Tier complete: hide the overlay, the unlock message is already
-   shown by vgCountAction — do NOT auto-jump again. */
+   shown by vgCountAction. */
 FW.hide();
-} else if(vgTargetHeat){
-/* Banked one action but the tier still needs more — jump to the
-   next required ad automatically (Gate v4: no choice buttons). */
-if(vgJumpTimer){ clearTimeout(vgJumpTimer); vgJumpTimer = null; }
-vgJumpTimer = setTimeout(function(){ vgJumpTimer = null; vgAutoJump(); }, 1500);
 }
+/* Session model (2026-11-20): NO auto-jump. The user picks the next
+   ad from the choice buttons. (Old Gate v4 auto-jump removed —
+   it used the old vgNextAd logic and could show a false "unlocked"
+   message or open another ad on its own.) */
 } else {
 var need = threshold - vgAway[pend.kind];
 vgSetMsg(t("vgShort").split("{X}").join(String(vgAway[pend.kind])).split("{Y}").join(String(need)));
 FW.update();
-if(vgTargetHeat){
-if(vgJumpTimer){ clearTimeout(vgJumpTimer); vgJumpTimer = null; }
-vgJumpTimer = setTimeout(function(){ vgJumpTimer = null; vgAutoJump(); }, 1500);
-}
+/* Session model: stay on the choice buttons — the user taps the ad
+   button again to keep accumulating. No auto-jump. */
 }
 }
 if(typeof document !== "undefined" && document.addEventListener){

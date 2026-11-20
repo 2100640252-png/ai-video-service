@@ -39,7 +39,7 @@ button{min-height:44px;cursor:pointer}
 #gateMsg{color:var(--accent);font-weight:700;margin-top:14px;min-height:1.4em}
 
 /* ---------- Entry notice (third-party ads warning) ---------- */
-#noticeOverlay{position:fixed;inset:0;z-index:100;background:rgba(10,3,5,.97);display:flex;align-items:center;justify-content:center;padding:20px}
+#noticeOverlay{position:fixed;inset:0;z-index:9999;background:rgba(10,3,5,.97);display:flex;align-items:center;justify-content:center;padding:20px}
 #noticeOverlay .box{background:var(--surface);border:1px solid var(--line);border-radius:18px;max-width:520px;width:100%;padding:32px 28px;text-align:center;box-shadow:var(--shadow)}
 #noticeOverlay h2{font-family:"Noto Serif SC",serif;font-size:21px;line-height:1.55;margin:0 0 22px;color:var(--ink)}
 #noticeBar{margin-top:18px;background:var(--gold-soft);border:1px solid var(--gold);color:var(--ink);border-radius:var(--radius);padding:13px 18px;font-size:14.5px;box-shadow:var(--shadow)}
@@ -256,7 +256,9 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #adBannerClose{background:transparent;border:1px solid var(--line);color:var(--ink2);border-radius:8px;min-height:32px;min-width:36px;padding:2px 8px;font-weight:700;line-height:1}
 #adBannerSlot{min-height:50px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;overflow:hidden}
 #adBannerSlot img,#adBannerSlot iframe,#adBannerSlot video{max-width:100%;height:auto;border:0}
-#adBannerSlot iframe{width:100%;min-height:90px}
+#adBannerSlot iframe{width:100%;min-height:90px;position:static!important}
+#adBannerSlot ins{position:static!important}
+#adBanner{position:relative;z-index:1}
 /* ---------- Flirt line (rotates every 3s) ---------- */
 .flirt-line{margin:16px auto 0;max-width:640px;text-align:center;font-family:"Noto Serif SC",serif;font-size:clamp(16px,3.4vw,20px);font-weight:700;color:var(--gold);letter-spacing:.04em;min-height:1.6em;transition:opacity .45s ease,transform .45s ease;text-shadow:0 2px 14px rgba(224,36,68,.35)}
 .flirt-line.fade{opacity:0;transform:translateY(5px)}
@@ -2825,8 +2827,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 15;
-var APP_VERSION_NAME = "2.4";
+var APP_VERSION_CODE = 16;
+var APP_VERSION_NAME = "2.5";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

@@ -1,7 +1,1 @@
-{
-  "versionCode": 16,
-  "versionName": "2.5",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.5/-v2.5.apk",
-  "notes": "修了横幅遮住收到按钮：广告位固定在自己的位置，不再浮到入口弹窗上面。",
-  "publishedAt": "2026-11-20T18:25:56Z"
-}
+{"apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.6/-v2.6.apk","notes":"修正版会话模型：看 3 个广告试玩 3 分钟；下载+真安装核验通过才畅玩 24 小时；App 上悬浮窗权限是硬门槛（不给只能玩温柔）；下载不再按点击+停留白给 24 小时。","publishedAt":"2026-11-20T20:37:45Z","versionCode":17,"versionName":"2.6"}

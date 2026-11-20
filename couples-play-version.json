@@ -1,7 +1,7 @@
 {
-  "versionCode": 13,
-  "versionName": "2.2",
-  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.2/-v2.2.apk",
-  "notes": "改名情侣情趣游戏；点开锁住的挡位直接跳广告，不用选；广告悬浮窗实时显示进度（需先开悬浮窗权限）。",
-  "publishedAt": "2026-11-20T11:26:42Z"
+  "versionCode": 14,
+  "versionName": "2.3",
+  "apkUrl": "https://github.com/2100640252-png/ai-video-service/releases/download/v2.3/-v2.3.apk",
+  "notes": "更新提示修好了：清单走更稳的 CDN，超时放宽到 10 秒；2.1 打开就能收到 2.3 更新提示。",
+  "publishedAt": "2026-11-20T17:05:49Z"
 }

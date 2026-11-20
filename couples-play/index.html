@@ -426,17 +426,19 @@ footer p{margin:0;max-width:760px}
 </div>
 </div>
 
-<!-- Tier gate (Session model, 2026-11-20): time-limited access.
+<!-- Tier gate (Session model, CORRECTED 2026-11-20): time-limited access.
      A session unlocks BOTH heat 2 (升温) and heat 3 (大胆).
-     - Watch 1 video ad (or finish 1 browse ad, 30s) → 3-minute trial.
-     - Finish 1 download ad (60s away time) → 24 hours, unlimited.
+     - Watch THREE ads (video / browse / download) → 3-minute trial.
+     - Download + VERIFIED install (network postback) → 24 hours.
+     A download click + 60s stay alone grants NO 24h — it only banks
+     1 ad credit and registers a pending install check (subid).
      When the session expires the tiers lock immediately (HEAT back
-     to 1). The gate shows the choice buttons — each action has a
-     different reward. Away time accumulates (localStorage
-     cp_gate_away). Back returns without penalty.
-     NOTE: the 24h grant is based on the download click + 60s stay.
-     The page cannot verify an actual app install (browser
-     restriction); true install data lives in the ad dashboards. -->
+     to 1). The gate shows the choice buttons.
+     APP ONLY: the floating-window permission is a hard requirement.
+     It IS the ad countdown (shows seconds watched / left on the ad
+     page). No permission → only the Mild tier, no 升温, no 大胆.
+     Away time accumulates (localStorage cp_gate_away). Back returns
+     without penalty. -->
 <div id="videoGateOverlay" role="dialog" aria-modal="true" aria-label="视频广告">
 <div class="vg-box">
 <div class="vg-top"><button class="btn" id="vgBackBtn" data-i="vgBack">← 返回</button></div>
@@ -607,8 +609,13 @@ vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
 vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
 vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
-vgReq2:{zh:"下载广告看满 60 秒，畅玩 24 小时；看视频广告，试玩 3 分钟",en:"Watch a download ad for 60s for 24h play; watch a video ad for a 3-min trial"},
-vgReq3:{zh:"下载广告看满 60 秒，畅玩 24 小时；看视频或浏览广告 30 秒，试玩 3 分钟",en:"Watch a download ad for 60s for 24h play; watch a video or browse ad for 30s for a 3-min trial"},
+vgReq2:{zh:"看 3 个广告，试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch 3 ads for a 3-min trial; download and install an advertised app for 24h play"},
+vgReq3:{zh:"看 3 个广告，试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch 3 ads for a 3-min trial; download and install an advertised app for 24h play"},
+vgPermWhy:{zh:"需要悬浮窗权限，因为它是广告倒计时：你在看广告的时候，它会浮在广告页面上，告诉你已经看了几秒、还差几秒。没有它，我们没法给你计时、没法确认你看了广告，所以只能玩温柔挡位。",en:"The floating-window permission is needed because it is the ad countdown: while you watch an ad, it floats over the ad page and shows how many seconds you have watched and how many are left. Without it we cannot time you or confirm you watched the ad, so you can only play the Mild tier."},
+vgPermGo:{zh:"去开启悬浮窗权限",en:"Enable the floating-window permission"},
+vgPermOnlyMild:{zh:"没有悬浮窗权限，只能玩温柔挡位。",en:"Without the floating-window permission, only the Mild tier is available."},
+vgAdCount:{zh:"已看 {GOT}/{NEED} 个广告",en:"Watched {GOT}/{NEED} ads"},
+vgDlVerify:{zh:"下载已记录，正在确认是否真的安装…",en:"Download recorded — verifying whether it was really installed…"},
 vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
 vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
 vgOpening:{zh:"正在打开广告…",en:"Opening ad…"},
@@ -2063,6 +2070,89 @@ try{ vgEnforceHeat(); }catch(e){}
 cpSessWasActive = active;
 }
 setInterval(cpTickSession, 1000);
+/* === Ad credits + install verification (2026-11-20, corrected) ===
+   - Trial rule: watch THREE ads to unlock a 3-minute trial. Every
+     completed ad action (video, browse, download) banks 1 credit.
+     At 3 credits the trial is granted and the counter resets.
+   - Download rule: a download click + 60s stay does NOT grant 24h
+     by itself (that would give 24h away for a mere page visit). It
+     banks 1 credit and registers a PENDING install check (a unique
+     click ID appended to the ad URL as subid). The 24h session is
+     granted ONLY when the ad network's postback confirms a real
+     install for that click ID (see cpCheckInstall). Until the
+     postback is wired up, a download grants no 24h — only 1 credit.
+   - The page itself CANNOT see installs (browser restriction). The
+     postback is the trigger: the network fires it to our Supabase
+     endpoint when the install is attributed. */
+var CP_CREDIT_KEY = "cp_ad_credits";
+var CP_INSTALL_KEY = "cp_pending_install";
+var CP_CREDITS_FOR_TRIAL = 3;
+function cpAdCredits(){
+var n = 0;
+if(vgLsOk){
+try{ n = parseInt(localStorage.getItem(CP_CREDIT_KEY), 10); }catch(e){ n = 0; }
+}
+if(isNaN(n) || n < 0) n = 0;
+return n;
+}
+function cpSetAdCredits(n){
+if(vgLsOk){ try{ localStorage.setItem(CP_CREDIT_KEY, String(Math.max(0, n))); }catch(e){} }
+}
+function cpNewClickId(){
+return "cp" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function cpPendingInstall(){
+if(vgLsOk){
+try{
+var raw = localStorage.getItem(CP_INSTALL_KEY);
+if(raw){ var o = JSON.parse(raw); if(o && o.clickId) return o; }
+}catch(e){}
+}
+return null;
+}
+function cpSetPendingInstall(o){
+if(vgLsOk){
+try{ if(o){ localStorage.setItem(CP_INSTALL_KEY, JSON.stringify(o)); } else { localStorage.removeItem(CP_INSTALL_KEY); } }catch(e){}
+}
+}
+/* Add 1 ad credit. At 3 credits, grant the 3-minute trial and reset.
+   Returns true when a trial was granted. */
+function cpAddAdCredit(){
+var n = cpAdCredits() + 1;
+if(n >= CP_CREDITS_FOR_TRIAL){
+cpSetAdCredits(0);
+try{ cpGrantSession("trial"); }catch(e){}
+return true;
+}
+cpSetAdCredits(n);
+return false;
+}
+/* Install verification — the trigger. Checks Supabase for a recorded
+   install for the pending click ID. If found, grants the 24h session
+   and clears the pending record. If not found, does nothing (the
+   user keeps waiting; the check re-runs every 30s while a download
+   is pending). The `installs` table is written by the ad networks'
+   postback (via a Supabase Edge Function), never by this page — the
+   page can only READ it. Best-effort, never throws. */
+function cpCheckInstall(){
+var pend = null;
+try{ pend = cpPendingInstall(); }catch(e){ return; }
+if(!pend || !pend.clickId) return;
+if(typeof fetch !== "function") return;
+var url = REF_SUPA_URL + "/rest/v1/installs?click_id=eq." + encodeURIComponent(pend.clickId) + "&select=click_id,installed_at";
+fetch(url, {headers: {"apikey": REF_SUPA_KEY, "Authorization": "Bearer " + REF_SUPA_KEY}}).then(function(r){
+if(!r.ok) throw new Error("supabase " + r.status);
+return r.json();
+}).then(function(rows){
+if(rows && rows.length > 0){
+try{ cpSetPendingInstall(null); }catch(e){}
+try{ cpGrantSession("full"); }catch(e){}
+try{ vgUpdateGateText(); }catch(e){}
+try{ syncHeatSeg(); }catch(e){}
+}
+}).catch(function(){ /* table missing or offline — keep waiting */ });
+}
+setInterval(function(){ try{ cpCheckInstall(); }catch(e){} }, 30000);
 /* Built-in fallback: the gate must never silently vanish because the remote
    config fetch failed or timed out (CFG is null until it loads). When the
    remote config carries ads.videoGate it overrides this; only an explicit
@@ -2267,7 +2357,7 @@ var rb = document.getElementById("vgRetryBtn");
 var ab = document.getElementById("vgActions");
 var bw = document.getElementById("vgBarWrap");
 if(v){ v.style.display = (st === "video" || st === "playbtn")? "block": "none"; }
-if(pb){ pb.style.display = (st === "playbtn")? "inline-block": "none"; }
+if(pb){ pb.style.display = (st === "playbtn" || st === "perm")? "inline-block": "none"; }
 if(rb){ rb.style.display = (st === "noad")? "inline-block": "none"; }
 /* Session model (2026-11-20): the choice buttons ARE shown — the user
    picks video (3-min trial), download (24h) or browse (3-min trial).
@@ -2361,12 +2451,17 @@ vgCountAction("browse");
    target tier. A watched video counts as browse (and banks one video
    toward the 5-video Bold path — see vgOnEnded); a time-verified
    Download click counts as download; a time-verified Browse click
-   counts as browse. When the target tier's requirements are met,
-   unlock it exactly like the old video gate did, then close the gate.
-   Otherwise show what is still missing and return to the action
-   buttons so the user can pick another ad source. If the gate was
-   closed while the player was on the ad tab, the verified action is
-   still banked in localStorage — only the UI update is skipped. */
+   counts as browse.
+   CORRECTED model (2026-11-20): every completed ad action banks 1
+   credit. THREE credits unlock a 3-minute trial. A download does
+   NOT grant 24h here — a click + 60s stay is not an install. The
+   download keeps its pending install record; 24h is granted only
+   when the network postback confirms a real install (cpCheckInstall).
+   When a trial session is active the tiers unlock and the gate
+   closes; otherwise the gate shows the ad count and stays open so
+   the user can watch the next ad. If the gate was closed while the
+   player was on the ad tab, the verified action is still banked in
+   localStorage — only the UI update is skipped. */
 function vgCountAction(kind){
 /* Consume accumulated away time for this kind — the SINGLE reset
    point. A completed video banks browse here, so any accumulated
@@ -2378,11 +2473,10 @@ var p = vgProg();
 if(kind === "browse"){ p.browse = 1; }
 if(kind === "download"){ p.download = 1; }
 vgSetProg(p);
-/* Session model: a completed browse/video action grants a 3-minute
-   trial; a completed download action grants 24 hours. The session
-   is what unlocks the tiers (see vgIsUnlocked). */
-if(kind === "browse"){ try{ cpGrantSession("trial"); }catch(e){} }
-if(kind === "download"){ try{ cpGrantSession("full"); }catch(e){} }
+/* 3 ads = 3-minute trial. A download banks 1 credit like any other
+   ad — it does NOT grant 24h here. */
+var trialGranted = false;
+try{ trialGranted = cpAddAdCredit(); }catch(e){}
 if(!vgTargetHeat){ return; }
 vgUpdateGateText();
 if(vgIsUnlocked(vgTargetHeat)){
@@ -2399,10 +2493,9 @@ if(currentGame){ openGame(currentGame, true); }
 }, 900);
 } else {
 var miss = "";
-if(vgTargetHeat === 3){
-if(p.videos >= 1 && p.videos < vgVideosNeeded() && !p.download && !p.browse){ miss = t("vgNeedVideos").replace("{N}", String(vgVideosNeeded() - p.videos)); }
-else if(!p.download){ miss = t("vgNeedDl"); }
-else if(!p.browse){ miss = t("vgNeedBr"); }
+try{ miss = t("vgAdCount").split("{GOT}").join(String(cpAdCredits())).split("{NEED}").join(String(CP_CREDITS_FOR_TRIAL)); }catch(e){}
+if(kind === "download" && cpPendingInstall()){
+miss += " " + t("vgDlVerify");
 }
 vgSetMsg(miss);
 vgShowState("actions");
@@ -2505,6 +2598,22 @@ vgVideoSeq++;
 var v = document.getElementById("vgVideo");
 if(v){ try{ v.pause(); }catch(e){} }
 var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgNetZoneCode("hilltopads", VG_BR_FALLBACK);
+/* Download: attach a unique click ID (subid) so the ad network can
+   report a real install back to us. The click ID is stored as a
+   pending install; 24h is granted ONLY when the network postback
+   confirms an install for this click ID. A click + stay alone
+   never grants 24h. */
+if(kind === "download"){
+var cid = "";
+try{ cid = cpNewClickId(); }catch(e){ cid = ""; }
+if(cid){
+try{
+var sep = (url.indexOf("?") >= 0)? "&" : "?";
+url = url + sep + "subid=" + encodeURIComponent(cid);
+cpSetPendingInstall({clickId: cid, kind: "download", at: Date.now()});
+}catch(e){}
+}
+}
 vgPending = {kind: kind};
 try{ window.open(url, "_blank"); }catch(e){}
 vgSetMsg("");
@@ -2670,10 +2779,60 @@ if(pb){ pb.style.display = "none"; }
 vgUpdateGateText();
 ov.classList.add("open");
 vgLoadGateAds();
-/* Session model: show the choice buttons — video (3-min trial),
-   download (24h) or browse (3-min trial). No auto-jump: each action
-   has a different reward, so the user picks. */
+/* App: the floating-window permission is a hard requirement. Without
+   it we cannot show the ad countdown, so the user can only play
+   Mild. Website: no plugin, no permission needed. */
+if(FW.hasPlugin()){
+FW.hasPermission().then(function(granted){
+if(granted){ vgShowState("actions"); return; }
+vgShowPermGate();
+}).catch(function(){ vgShowState("actions"); });
+return;
+}
+/* Session model: show the choice buttons — video / download / browse.
+   3 ads = 3-min trial; a verified install = 24h. */
 vgShowState("actions");
+}
+/* Floating-window permission gate (App only, 2026-11-20).
+   WHY the permission is needed: the floating window IS the ad
+   countdown. While the user is on the ad page, it floats over the
+   ad and shows how many seconds they have watched and how many
+   are left. Without it we cannot show them the time, so we cannot
+   verify their ad watch — and they can only play the Mild tier.
+   No permission → no 升温, no 大胆. Only 温柔. */
+function vgShowPermGate(){
+vgSetMsg(t("vgPermWhy"));
+vgSetStatus("");
+var pb = document.getElementById("vgPlayBtn");
+if(pb){
+pb.textContent = t("vgPermGo");
+pb.style.display = "inline-block";
+pb.onclick = function(){
+pb.style.display = "none";
+FW.requestPermission();
+vgSetStatus(t("vgPermNeed"));
+var pb2 = document.getElementById("vgPlayBtn");
+if(pb2){
+pb2.textContent = t("vgContinue");
+pb2.style.display = "inline-block";
+pb2.onclick = function(){
+pb2.style.display = "none";
+FW.hasPermission().then(function(granted){
+if(granted){ vgShowState("actions"); vgSetMsg(""); vgSetStatus(""); return; }
+vgSetMsg(t("vgPermOnlyMild"));
+vgSetStatus("");
+var pb3 = document.getElementById("vgPlayBtn");
+if(pb3){
+pb3.textContent = t("vgClose");
+pb3.style.display = "inline-block";
+pb3.onclick = function(){ vgCloseGate(); };
+}
+}).catch(function(){ vgShowState("actions"); });
+};
+}
+};
+}
+vgShowState("perm");
 }
 function vgWireVideo(){
 var v = document.getElementById("vgVideo");

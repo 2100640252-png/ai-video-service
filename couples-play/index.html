@@ -2818,35 +2818,44 @@ if(cfg && typeof cfg === "object"){ applyConfig(cfg); fireAd("app_open");}
 }
 loadRemoteConfig();
 
-/* ================= App update check (v1.4) =================
-   Current build: versionCode 10, versionName "1.9". On entering (after
+/* ================= App update check (v1.4, mirrors since 2.3) =================
+   Current build: versionCode 14, versionName "2.3". On entering (after
    the gate), fetch the version manifest; only when its versionCode is
-   greater than 9 AND apkUrl is present do we show the top banner.
-   Up-to-date, offline or a failed fetch: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 13;
-var APP_VERSION_NAME = "2.2";
-var VERSION_URL = "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json";
+   greater than this build's AND apkUrl is present do we show the top banner.
+   GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
+   mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
+   or a failed fetch on every mirror: stay silent — no popup, no error. */
+var APP_VERSION_CODE = 14;
+var APP_VERSION_NAME = "2.3";
+var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){
 if(typeof fetch !== "function") return;
+var idx = 0;
+function tryNext(){
+if(idx >= VERSION_URLS.length) return; /* every mirror failed: stay silent */
+var url = VERSION_URLS[idx++];
 var ctrl = (typeof AbortController !== "undefined")? new AbortController(): null;
-var timer = ctrl? setTimeout(function(){ try{ ctrl.abort();}catch(e){} }, 5000): null;
-fetch(VERSION_URL, {cache:"no-store", signal: ctrl? ctrl.signal: undefined})
+var timer = ctrl? setTimeout(function(){ try{ ctrl.abort();}catch(e){} }, 10000): null;
+fetch(url, {cache:"no-store", signal: ctrl? ctrl.signal: undefined})
 .then(function(r){ if(!r.ok){ throw new Error("version fetch failed");} return r.json();})
 .then(function(v){
 if(timer){ clearTimeout(timer);}
-if(!v || typeof v !== "object") return;
+if(!v || typeof v !== "object"){ tryNext(); return; }
 var code = parseInt(v.versionCode, 10);
-var url = (typeof v.apkUrl === "string")? v.apkUrl.trim(): "";
-if(isNaN(code) || code <= APP_VERSION_CODE || !url) return;
-updateApkUrl = url;
+var apk = (typeof v.apkUrl === "string")? v.apkUrl.trim(): "";
+if(isNaN(code)){ tryNext(); return; }
+if(code <= APP_VERSION_CODE || !apk) return;
+updateApkUrl = apk;
 var name = (typeof v.versionName === "string" && v.versionName)? v.versionName: String(code);
 var txt = document.getElementById("updateTxt");
 if(txt){ txt.textContent = (LANG==="zh"? "发现新版本 ": "New version ") + name + (LANG==="zh"? "，点更新覆盖安装": " — tap to update & install over this one");}
 var bar = document.getElementById("updateBar");
 if(bar){ bar.classList.add("open");}
 })
-.catch(function(){ if(timer){ clearTimeout(timer);} /* offline / no manifest: do nothing */ });
+.catch(function(){ if(timer){ clearTimeout(timer);} tryNext(); /* try next mirror, else stay silent */ });
+}
+tryNext();
 }
 var updateBarEl = document.getElementById("updateBar");
 if(updateBarEl){

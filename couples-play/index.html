@@ -2614,6 +2614,7 @@ function vgSaveAway(){
 try{ localStorage.setItem(VG_AWAY_KEY, JSON.stringify(vgAway)); }catch(e){}
 }
 var vgHiddenAt = 0;
+var vgLeftGame = false;
 var vgPending = null;
 /* Away-time timer (2026-11-21, 2.8 fix): banks the ad credit as soon
    as the away time reaches the threshold, instead of waiting for a
@@ -2631,7 +2632,7 @@ function vgStartAwayTimer(){
 if(vgAwayTimer){ return; }
 vgAwayTimer = setInterval(function(){
 if(!vgPending){ vgStopAwayTimer(); return; }
-if(typeof document !== "undefined" && !document.hidden){ return; }
+if(!vgLeftGame && (typeof document === "undefined" || !document.hidden)){ return; }
 if(!vgAdOpenedAt){ return; }
 var away = Math.floor((Date.now() - vgAdOpenedAt) / 1000);
 if(away < 0){ away = 0; }
@@ -2651,8 +2652,9 @@ if(vgAwayTimer){ clearInterval(vgAwayTimer); vgAwayTimer = null; }
 function vgOnReturn(){
 if(!vgPending){ return; }
 if(typeof document !== "undefined" && document.hidden){ return; }
-if(!vgHiddenAt){ return; }
-var away = Math.floor((Date.now() - vgHiddenAt) / 1000);
+var startAt = vgHiddenAt || (vgLeftGame ? vgAdOpenedAt : 0);
+if(!startAt){ return; }
+var away = Math.floor((Date.now() - startAt) / 1000);
 if(away < 0){ away = 0; }
 /* Guard: a focus/visibility event can fire right when the ad tab
    opens, within a second of the click. That is the click-time
@@ -2693,12 +2695,12 @@ FW.update();
 }
 if(typeof document !== "undefined" && document.addEventListener){
 document.addEventListener("visibilitychange", function(){
-if(document.hidden){ vgHiddenAt = Date.now(); cpWasHidden = true; }
+if(document.hidden){ vgHiddenAt = Date.now(); vgLeftGame = true; cpWasHidden = true; }
 else { vgOnReturn(); if(cpWasHidden){ cpWasHidden = false; cpOnVisible(); } }
 });
 }
 if(typeof window !== "undefined" && window.addEventListener){
-window.addEventListener("blur", function(){ vgHiddenAt = Date.now(); cpWasHidden = true; });
+window.addEventListener("blur", function(){ vgHiddenAt = Date.now(); vgLeftGame = true; cpWasHidden = true; });
 window.addEventListener("focus", function(){ vgOnReturn(); if(cpWasHidden){ cpWasHidden = false; cpOnVisible(); } });
 }
 var VG_DL_FALLBACK = "https://auctionr.org/4/773766fc6c76e8a6733c6d7e1ef22bce";
@@ -2747,6 +2749,7 @@ FW.noteDownload();
    "unlocked" state is kept: the install is re-detected on return.) */
 vgDlState = "";
 }
+vgLeftGame = false;
 try{ window.open(url, "_blank"); }catch(e){}
 vgSetMsg("");
 }
@@ -3286,8 +3289,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 20;
-var APP_VERSION_NAME = "2.9";
+var APP_VERSION_CODE = 21;
+var APP_VERSION_NAME = "2.10";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

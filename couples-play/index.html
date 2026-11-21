@@ -617,6 +617,8 @@ vgPermGo:{zh:"去开启悬浮窗权限",en:"Enable the floating-window permissio
 vgPermOnlyMild:{zh:"没有悬浮窗权限，只能玩温柔挡位。",en:"Without the floating-window permission, only the Mild tier is available."},
 vgAdCount:{zh:"已看 {GOT}/{NEED} 个广告",en:"Watched {GOT}/{NEED} ads"},
 vgDlVerify:{zh:"下载已记录，正在确认是否真的安装…",en:"Download recorded — verifying whether it was really installed…"},
+vgInstalledBrowse:{zh:"已安装！请回到广告 App 注册并浏览 10 秒，再返回游戏解锁 24 小时",en:"Installed! Go back to the ad app, register and browse for 10 seconds, then return to unlock 24 hours"},
+vgUnlocked24:{zh:"已解锁 24 小时！畅玩吧！",en:"Unlocked for 24 hours! Enjoy!"},
 vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
 vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
 vgOpening:{zh:"正在打开广告…",en:"Opening ad…"},
@@ -2151,6 +2153,48 @@ return false;
    is pending). The `installs` table is written by the ad networks'
    postback (via a Supabase Edge Function), never by this page — the
    page can only READ it. Best-effort, never throws. */
+/* Native install check (app only, 2026-11-21, 2.9): after the player
+   returns to the game, ask the native side whether an app install
+   was detected since the download tap. Install + 10s away after the
+   install (register + browse in the ad app) = unlock 24h. The
+   website has no install detection, so this is a no-op there
+   (FW.hasPlugin() is false). The postback poller (cpCheckInstall)
+   stays as the website / backup path. */
+function cpCheckNativeInstall(){
+if(!FW.hasPlugin()){ return; }
+FW.checkInstall().then(function(ev){
+if(!ev || !ev.installed || !ev.at){ return; }
+if(vgDlTapAt && ev.at < vgDlTapAt){ return; }
+vgInstallAt = ev.at;
+vgDlState = "installed";
+FW.update();
+var awaySinceInstall = Math.floor((Date.now() - ev.at) / 1000);
+if(awaySinceInstall >= 10){
+try{ cpGrantSession("full"); }catch(e){}
+try{ cpSetPendingInstall(null); }catch(e){}
+vgDlState = "unlocked";
+FW.update();
+FW.clearInstall();
+vgDlTapAt = 0;
+vgInstallAt = 0;
+try{ vgSetMsg(t("vgUnlocked24")); }catch(e){}
+try{ vgSetStatus(""); }catch(e){}
+try{ cpUpdateTimer(); }catch(e){}
+try{ syncHeatSeg(); }catch(e){}
+} else {
+try{ vgSetMsg(t("vgInstalledBrowse")); }catch(e){}
+}
+}).catch(function(){});
+}
+/* Return-to-game (2.9): the player came back to the game interface.
+   Close the floating window (it stays open only while the player is
+   away on an ad / download / install) and check for a native
+   install. Runs only on a real return (the game was hidden), not
+   on every focus event. */
+function cpOnVisible(){
+FW.hide();
+cpCheckNativeInstall();
+}
 function cpCheckInstall(){
 var pend = null;
 try{ pend = cpPendingInstall(); }catch(e){ return; }
@@ -2332,6 +2376,10 @@ var vgFiredQ = {};
 var vgVideoCredited = false;
 var vgAwayTimer = null;
 var vgAdOpenedAt = 0;
+var vgDlState = "";
+var vgDlTapAt = 0;
+var vgInstallAt = 0;
+var cpWasHidden = false;
 var vgDuration = 0;
 var vgVideoSeq = 0;
 function vgSetMsg(s){ var el = document.getElementById("vgMsg"); if(el){ el.textContent = s || ""; } }
@@ -2645,13 +2693,13 @@ FW.update();
 }
 if(typeof document !== "undefined" && document.addEventListener){
 document.addEventListener("visibilitychange", function(){
-if(document.hidden){ vgHiddenAt = Date.now(); }
-else { vgOnReturn(); }
+if(document.hidden){ vgHiddenAt = Date.now(); cpWasHidden = true; }
+else { vgOnReturn(); if(cpWasHidden){ cpWasHidden = false; cpOnVisible(); } }
 });
 }
 if(typeof window !== "undefined" && window.addEventListener){
-window.addEventListener("blur", function(){ vgHiddenAt = Date.now(); });
-window.addEventListener("focus", function(){ vgOnReturn(); });
+window.addEventListener("blur", function(){ vgHiddenAt = Date.now(); cpWasHidden = true; });
+window.addEventListener("focus", function(){ vgOnReturn(); if(cpWasHidden){ cpWasHidden = false; cpOnVisible(); } });
 }
 var VG_DL_FALLBACK = "https://auctionr.org/4/773766fc6c76e8a6733c6d7e1ef22bce";
 var VG_BR_FALLBACK = "https://ashamed-employer.com/sOkLSm";
@@ -2689,6 +2737,16 @@ cpSetPendingInstall({clickId: cid, kind: "download", at: Date.now()});
 vgPending = {kind: kind};
 vgAdOpenedAt = Date.now();
 vgStartAwayTimer();
+if(kind === "download"){
+vgDlState = "downloading";
+vgDlTapAt = Date.now();
+FW.noteDownload();
+} else if(vgDlState === "downloading"){
+/* Switched to a browse ad: a stale "downloading" would make the
+   overlay say Downloading during a browse. (An "installed" /
+   "unlocked" state is kept: the install is re-detected on return.) */
+vgDlState = "";
+}
 try{ window.open(url, "_blank"); }catch(e){}
 vgSetMsg("");
 }
@@ -2718,7 +2776,9 @@ download: p.download,
 browse: p.browse,
 videos: p.videos,
 videosNeed: vgVideosNeeded(),
-tier: (vgTargetHeat === 3)? "大胆" : "升温"
+tier: (vgTargetHeat === 3)? "大胆" : "升温",
+lang: LANG,
+dlState: vgDlState
 };
 },
 hasPermission: function(){
@@ -2749,6 +2809,24 @@ hide: function(){
 if(!FW.hasPlugin()){ return Promise.resolve(); }
 try{
 return window.Capacitor.Plugins.FloatingWindow.hide().catch(function(){});
+}catch(e){ return Promise.resolve(); }
+},
+noteDownload: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.noteDownload().catch(function(){});
+}catch(e){ return Promise.resolve(); }
+},
+checkInstall: function(){
+if(!FW.hasPlugin()){ return Promise.resolve({installed:false}); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.checkInstall().catch(function(){ return {installed:false}; });
+}catch(e){ return Promise.resolve({installed:false}); }
+},
+clearInstall: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.clearInstall().catch(function(){});
 }catch(e){ return Promise.resolve(); }
 }
 };
@@ -3208,8 +3286,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 19;
-var APP_VERSION_NAME = "2.8";
+var APP_VERSION_CODE = 20;
+var APP_VERSION_NAME = "2.9";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

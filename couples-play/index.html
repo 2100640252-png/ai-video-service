@@ -2330,6 +2330,8 @@ var vgLastTime = 0;
 var vgImpressionFired = false;
 var vgFiredQ = {};
 var vgVideoCredited = false;
+var vgAwayTimer = null;
+var vgAdOpenedAt = 0;
 var vgDuration = 0;
 var vgVideoSeq = 0;
 function vgSetMsg(s){ var el = document.getElementById("vgMsg"); if(el){ el.textContent = s || ""; } }
@@ -2413,6 +2415,9 @@ vgShowState("noad");
 }
 function vgCloseGate(){
 if(vgJumpTimer){ clearTimeout(vgJumpTimer); vgJumpTimer = null; }
+vgStopAwayTimer();
+vgAdOpenedAt = 0;
+vgPending = null;
 FW.hide();
 var ov = document.getElementById("videoGateOverlay");
 if(ov){ ov.classList.remove("open"); }
@@ -2495,6 +2500,8 @@ vgBankVideo();
    player was on the ad tab, the verified action is still banked in
    localStorage — only the UI update is skipped. */
 function vgCountAction(kind){
+vgPending = null;
+vgStopAwayTimer();
 /* Consume accumulated away time for this kind — the SINGLE reset
    point. A completed video banks browse here, so any accumulated
    browse away-time must be cleared or it would be double-counted
@@ -2560,6 +2567,39 @@ try{ localStorage.setItem(VG_AWAY_KEY, JSON.stringify(vgAway)); }catch(e){}
 }
 var vgHiddenAt = 0;
 var vgPending = null;
+/* Away-time timer (2026-11-21, 2.8 fix): banks the ad credit as soon
+   as the away time reaches the threshold, instead of waiting for a
+   focus/visibilitychange return event. The return event proved
+   fragile: in the 2.7 website test, download + 15s AND download +
+   65s both banked nothing and showed no message at all, which means
+   vgOnReturn returned early at one of its guards (no pending, tab
+   still reported hidden, or vgHiddenAt never armed). The timer
+   measures from the moment the ad was opened (vgAdOpenedAt, set in
+   vgOpenLink - no event needed) and only counts while the document
+   is hidden, so a credit is banked after 10 real seconds away.
+   vgOnReturn stays as the return-path backup (short stays, the
+   vgShort "you watched X, Y to go" message). */
+function vgStartAwayTimer(){
+if(vgAwayTimer){ return; }
+vgAwayTimer = setInterval(function(){
+if(!vgPending){ vgStopAwayTimer(); return; }
+if(typeof document !== "undefined" && !document.hidden){ return; }
+if(!vgAdOpenedAt){ return; }
+var away = Math.floor((Date.now() - vgAdOpenedAt) / 1000);
+if(away < 0){ away = 0; }
+var total = (vgAway[vgPending.kind] || 0) + away;
+var o = vgGateOpts();
+var threshold = (vgPending.kind === "download")? o.download : o.browse;
+if(total >= threshold){
+vgCountAction(vgPending.kind);
+vgStopAwayTimer();
+FW.update();
+}
+}, 1000);
+}
+function vgStopAwayTimer(){
+if(vgAwayTimer){ clearInterval(vgAwayTimer); vgAwayTimer = null; }
+}
 function vgOnReturn(){
 if(!vgPending){ return; }
 if(typeof document !== "undefined" && document.hidden){ return; }
@@ -2647,6 +2687,8 @@ cpSetPendingInstall({clickId: cid, kind: "download", at: Date.now()});
 }
 }
 vgPending = {kind: kind};
+vgAdOpenedAt = Date.now();
+vgStartAwayTimer();
 try{ window.open(url, "_blank"); }catch(e){}
 vgSetMsg("");
 }
@@ -3166,8 +3208,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 18;
-var APP_VERSION_NAME = "2.7";
+var APP_VERSION_CODE = 19;
+var APP_VERSION_NAME = "2.8";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

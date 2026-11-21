@@ -1,1 +1,1 @@
-{"versionCode":19,"versionName":"2.8","apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.8/-v2.8.apk","notes":"2.8：修复下载广告不记分——加了离开计时器，看满 10 秒就记分，不再只等返回事件；其余同 2.7（每个广告 10 秒、3 个共 30 秒换 3 分钟试玩、试玩期常驻下载 24 小时提示、背景音乐已取消）。","publishedAt":"2026-11-21T18:20:00Z"}
+{"versionCode":20,"versionName":"2.9","apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.9/-v2.9.apk","notes":"2.9：下载安装终于能触发24小时了——App原生装机检测（装完显示已安装，注册+浏览10秒回游戏解锁24小时）；悬浮窗跟游戏语言（中/英），取权限后一直开着、回游戏再关；下载显示下载中。其余同2.8。","publishedAt":"2026-11-21T18:58:00Z"}

@@ -1,1 +1,1 @@
-{"versionCode":22,"versionName":"2.11","apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.11/-v2.11.apk","notes":"2.11：广告门不再被悬浮窗权限挡住——视频/浏览/下载三个按钮一直都在；视频不用权限直接看，下载/安装点的时候再要权限，悬浮窗跟着下载中→已安装→24小时走。其余同2.10。","publishedAt":"2026-11-21T19:34:00Z"}
+{"versionCode":23,"versionName":"2.12","apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.12/-v2.12.apk","notes":"2.12：视频广告终于在游戏里播了——带声播不起来就静音自动播，不再是死封面；点暂停的视频就是播放，不再跳浏览器；只有正在播的视频点它才跳广告主链接。其余同2.11。","publishedAt":"2026-11-21T19:59:00Z"}

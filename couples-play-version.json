@@ -1,1 +1,1 @@
-{"versionCode":20,"versionName":"2.9","apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.9/-v2.9.apk","notes":"2.9：下载安装终于能触发24小时了——App原生装机检测（装完显示已安装，注册+浏览10秒回游戏解锁24小时）；悬浮窗跟游戏语言（中/英），取权限后一直开着、回游戏再关；下载显示下载中。其余同2.8。","publishedAt":"2026-11-21T18:58:00Z"}
+{"versionCode":21,"versionName":"2.10","apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.10/-v2.10.apk","notes":"2.10：修下载记分（离开检测改走失焦信号，浏览器里也稳了）；其余同2.9（原生装机检测：装完显示已安装，注册+浏览10秒回游戏解锁24小时；悬浮窗跟游戏语言，取权限后一直开着、回游戏再关；下载显示下载中）。","publishedAt":"2026-11-21T19:07:00Z"}

@@ -1,1 +1,1 @@
-{"apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.6/-v2.6.apk","notes":"修正版会话模型：看 3 个广告试玩 3 分钟；下载+真安装核验通过才畅玩 24 小时；App 上悬浮窗权限是硬门槛（不给只能玩温柔）；下载不再按点击+停留白给 24 小时。","publishedAt":"2026-11-20T20:37:45Z","versionCode":17,"versionName":"2.6"}
+{"apkUrl":"https://github.com/2100640252-png/ai-video-service/releases/download/v2.7/-v2.7.apk","notes":"2.7：每个广告只算 10 秒，3 个广告共 30 秒换 3 分钟试玩；满 10 秒提示返回游戏看下一个；试玩期间常驻下载 24 小时提示；背景音乐已取消，只留游戏音效；修复 2.6 事故——2.6 的 APK 里包的是 2.5 的页面。","publishedAt":"2026-11-21T17:35:00Z","versionCode":18,"versionName":"2.7"}

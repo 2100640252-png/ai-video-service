@@ -2934,18 +2934,14 @@ if(pb){ pb.style.display = "none"; }
 vgUpdateGateText();
 ov.classList.add("open");
 vgLoadGateAds();
-/* App: the floating-window permission is a hard requirement. Without
-   it we cannot show the ad countdown, so the user can only play
-   Mild. Website: no plugin, no permission needed. */
-if(FW.hasPlugin()){
-FW.hasPermission().then(function(granted){
-if(granted){ vgShowState("actions"); return; }
-vgShowPermGate();
-}).catch(function(){ vgShowState("actions"); });
-return;
-}
-/* Session model: show the choice buttons — video / download / browse.
-   3 ads = 3-min trial; a verified install = 24h. */
+/* 2.11: the ad buttons are ALWAYS shown. The old hard permission gate
+   hid every button (video / browse / download) when the floating-window
+   permission was not granted, so the user saw no video and no way to
+   trigger the floating window at all. Video needs no permission (it
+   plays inline in the gate, with its own progress bar). Browse/download
+   check the permission at tap time in vgPickAd: if it is not granted
+   the app asks for it there, then the floating window shows on the
+   download/install flow (Downloading -> Installed -> 24h). */
 vgShowState("actions");
 }
 /* Floating-window permission gate (App only, 2026-11-20).
@@ -3289,8 +3285,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 21;
-var APP_VERSION_NAME = "2.10";
+var APP_VERSION_CODE = 22;
+var APP_VERSION_NAME = "2.11";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

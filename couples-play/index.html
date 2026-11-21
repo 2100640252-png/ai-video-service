@@ -2504,7 +2504,13 @@ try{ v.load(); }catch(e){}
 vgShowState("video");
 var p = null;
 try{ p = v.play(); }catch(e){ p = null; }
-if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
+if(p && p.catch){ p.catch(function(){
+/* 2.12: unmuted autoplay was blocked (mobile WebView: the VAST
+   fetch is async, so play() runs outside the tap gesture). Fall back
+   to MUTED autoplay so the ad actually plays instead of sitting on
+   a static cover. If muted play also fails, show the play button. */
+try{ v.muted = true; var p2 = v.play(); if(p2 && p2.catch){ p2.catch(function(){ vgShowState("playbtn"); }); } }catch(e){ vgShowState("playbtn"); }
+}); }
 });
 }
 /* Bank one video-ad credit. Called after 10s of playback (10s rule)
@@ -3014,6 +3020,16 @@ if(Math.abs(v.currentTime - vgLastTime) > 0.5){ try{ v.currentTime = vgLastTime;
 });
 v.addEventListener("ended", function(){ vgOnEnded(); });
 v.addEventListener("click", function(){
+/* 2.12: tapping a PAUSED video plays it (the tap is a user gesture,
+   so unmuted playback is allowed) instead of opening the browser.
+   Before this fix, tapping the static cover opened the advertiser
+   link immediately, so the ad never played inside the game. Tapping
+   a PLAYING video still opens the advertiser link (standard VAST). */
+if(v.paused){
+try{ v.muted = false; }catch(e){}
+try{ var p = v.play(); if(p && p.catch){ p.catch(function(){}); } }catch(e){}
+return;
+}
 if(vgAd && vgAd.clickThrough){ window.open(vgAd.clickThrough, "_blank"); }
 });
 v.addEventListener("error", function(){
@@ -3285,8 +3301,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 22;
-var APP_VERSION_NAME = "2.11";
+var APP_VERSION_CODE = 23;
+var APP_VERSION_NAME = "2.12";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

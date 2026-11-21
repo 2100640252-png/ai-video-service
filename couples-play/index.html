@@ -59,6 +59,7 @@ header.top h1 .en{font-family:"Cormorant Garamond",serif;font-weight:600}
 /* Play-session countdown (trial 3 min / full 24h). Shown only while a
    session is active; hidden otherwise. */
 .sess-timer{display:inline-block;font-weight:700;font-size:13px;color:var(--gold);background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.45);border-radius:999px;padding:6px 12px;margin-left:8px;white-space:nowrap}
+.sess-hint{display:inline-block;font-weight:600;font-size:12px;color:var(--gold);border-bottom:1px dashed var(--gold);padding:6px 2px;margin-left:10px;white-space:nowrap;cursor:pointer}
 .tool-label{font-size:12.5px;color:var(--ink2);font-weight:700;letter-spacing:.08em}
 
 /* ---------- Safety strip ---------- */
@@ -364,7 +365,7 @@ footer p{margin:0;max-width:760px}
 <button data-heat="3" data-i="heat3">大胆 Spicy</button>
 </div>
 <button class="btn gold" id="refBtn" data-i="refBtn">💰 推广返现</button>
-<span class="sess-timer" id="sessTimer" style="display:none"></span>
+<span class="sess-timer" id="sessTimer" style="display:none"></span><span class="sess-hint" id="sessHint" style="display:none"></span>
 </div>
 </header>
 
@@ -405,7 +406,7 @@ footer p{margin:0;max-width:760px}
 <button data-heat="2" data-i="tier2">升温</button>
 <button data-heat="3" data-i="tier3">大胆</button>
 </div>
-<span class="sess-timer" id="sessTimerGame" style="display:none"></span>
+<span class="sess-timer" id="sessTimerGame" style="display:none"></span><span class="sess-hint" id="sessHintGame" style="display:none"></span>
 </div>
 <div class="p-cover" id="pCover"></div>
 <div id="pBody"></div>
@@ -609,8 +610,8 @@ vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
 vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
 vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
-vgReq2:{zh:"看 3 个广告，试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch 3 ads for a 3-min trial; download and install an advertised app for 24h play"},
-vgReq3:{zh:"看 3 个广告，试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch 3 ads for a 3-min trial; download and install an advertised app for 24h play"},
+vgReq2:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app for 24h play"},
+vgReq3:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app for 24h play"},
 vgPermWhy:{zh:"需要悬浮窗权限，因为它是广告倒计时：你在看广告的时候，它会浮在广告页面上，告诉你已经看了几秒、还差几秒。没有它，我们没法给你计时、没法确认你看了广告，所以只能玩温柔挡位。",en:"The floating-window permission is needed because it is the ad countdown: while you watch an ad, it floats over the ad page and shows how many seconds you have watched and how many are left. Without it we cannot time you or confirm you watched the ad, so you can only play the Mild tier."},
 vgPermGo:{zh:"去开启悬浮窗权限",en:"Enable the floating-window permission"},
 vgPermOnlyMild:{zh:"没有悬浮窗权限，只能玩温柔挡位。",en:"Without the floating-window permission, only the Mild tier is available."},
@@ -630,6 +631,7 @@ vgVideoCount:{zh:"视频广告 ({GOT}/{NEED})",en:"Video ads ({GOT}/{NEED})"},
 vgVideoAlt:{zh:"",en:""},
 sessTrial:{zh:"试玩剩余",en:"Trial left"},
 sessFull:{zh:"畅玩剩余",en:"Play time left"},
+sessHint:{zh:"下载并安装广告 App，畅玩 24 小时",en:"Download & install an advertised app for 24h play"},
 vgNeedVideos:{zh:"还差 {N} 个视频广告（或 1 个下载广告 + 1 个浏览广告）",en:"{N} more video ad(s) to go (or 1 download ad + 1 browse ad)"},
 refBtn:{zh:"💰 推广返现",en:"💰 Refer & Earn"},
 refTitle:{zh:"推广返现",en:"Refer & Earn"},
@@ -1354,17 +1356,16 @@ osc.start(t0+off); osc.stop(t0+off+.04);
 }
 
 /* ================= Background music =================
-   Starts on the gate "Enter" tap (a user gesture, so autoplay rules
-   are satisfied). Default: a soft ambient pad loop synthesized with
-   WebAudio — no external file, works offline. Remote config can
-   override: CFG.music.enabled === false turns music off entirely;
-   CFG.music.url plays that audio file (looped) instead of the pad.
-   Changing the config switches the music live, no reload. */
-var MUSIC = {started:false, mode:"builtin", url:"", enabled:true, playing:false, ctx:null, master:null, schedTimer:null, chordIdx:0, userOff:false};
+   REMOVED 2026-11-21 (user order): no background music at all — only
+   game sound effects (dice etc.) remain. The code stays so it can be
+   turned back on, but it is OFF by default AND off unless the remote
+   config explicitly sets music.enabled === true. The corner music
+   button hides itself when music is disabled (updateMusicBtn). */
+var MUSIC = {started:false, mode:"builtin", url:"", enabled:false, playing:false, ctx:null, master:null, schedTimer:null, chordIdx:0, userOff:false};
 function musicWanted(){ return MUSIC.enabled && !MUSIC.userOff;}
 function applyMusicConfig(){
 var m = (CFG && CFG.music && typeof CFG.music === "object")? CFG.music: null;
-var newEnabled = !(m && m.enabled === false);
+var newEnabled = !!(m && m.enabled === true);
 var newUrl = (m && m.url)? String(m.url): "";
 var changed = (newEnabled !== MUSIC.enabled) || (newUrl !== MUSIC.url);
 MUSIC.enabled = newEnabled; MUSIC.url = newUrl;
@@ -1450,6 +1451,12 @@ if(MUSIC.playing){ MUSIC.userOff = true; stopMusic();}
 else { MUSIC.userOff = false; startMusic();}
 updateMusicBtn();
 };
+
+/* Trial hint: tap to open the gate and pick the download ad (24h). */
+["sessHint","sessHintGame"].forEach(function(id){
+var el = document.getElementById(id);
+if(el){ el.onclick = function(){ try{ vgOpenGate(2); }catch(e){} }; }
+});
 
 /* ================= Flirt lines (rotate every 3 seconds) ================= */
 var FLIRT = [
@@ -1980,9 +1987,9 @@ if(vgLsOk){ try{ localStorage.setItem(VG_PROG_KEY, JSON.stringify(vgProgMem)); }
    When the session expires the tiers lock immediately (HEAT back to 1).
    NOTE: the game CANNOT verify an actual app install from the page
    (browser restriction, no API) — the 24h grant is based on the
-   download click + 60s stay (engagement). True install data lives in
-   the Adsterra/HilltopAds dashboards; a postback into Supabase would
-   be needed to verify an install. */
+   network postback confirming a real install (cpCheckInstall polls
+   the Supabase installs table). True install data lives in the
+   Adsterra/HilltopAds dashboards. */
 var CP_SESS_KEY = "cp_play_session";
 var CP_TRIAL_MS = 3*60*1000;
 var CP_FULL_MS = 24*60*60*1000;
@@ -2055,6 +2062,14 @@ var a = document.getElementById("sessTimer");
 var b = document.getElementById("sessTimerGame");
 if(a){ a.style.display = txt? "inline-block": "none"; a.textContent = txt; }
 if(b){ b.style.display = txt? "inline-block": "none"; b.textContent = txt; }
+/* Trial only: persistent reminder that a download + real install
+   unlocks 24h. Hidden for full sessions and when there is no session. */
+var showHint = !!(s && s.kind === "trial");
+var hintTxt = showHint? t("sessHint") : "";
+var h1 = document.getElementById("sessHint");
+var h2 = document.getElementById("sessHintGame");
+if(h1){ h1.style.display = showHint? "inline-block": "none"; h1.textContent = hintTxt; }
+if(h2){ h2.style.display = showHint? "inline-block": "none"; h2.textContent = hintTxt; }
 }
 function cpTickSession(){
 var s = cpSession();
@@ -2070,11 +2085,13 @@ try{ vgEnforceHeat(); }catch(e){}
 cpSessWasActive = active;
 }
 setInterval(cpTickSession, 1000);
-/* === Ad credits + install verification (2026-11-20, corrected) ===
+/* === Ad credits + install verification (2026-11-20, corrected; 10s rule 2026-11-21) ===
    - Trial rule: watch THREE ads to unlock a 3-minute trial. Every
      completed ad action (video, browse, download) banks 1 credit.
+     One ad counts after 10s (video: 10s playback; browse/download:
+     10s away). 3 ads = 30s total.
      At 3 credits the trial is granted and the counter resets.
-   - Download rule: a download click + 60s stay does NOT grant 24h
+   - Download rule: a download click + 10s stay does NOT grant 24h
      by itself (that would give 24h away for a mere page visit). It
      banks 1 credit and registers a PENDING install check (a unique
      click ID appended to the ad URL as subid). The 24h session is
@@ -2171,13 +2188,13 @@ var VG_DEFAULT_TAGS = [
 "https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dredirectlinear&correlator="
 ];
 /* Gate v3 options from ads.gate in the remote config. Built-in fallbacks
-   (browse 30s, download 60s, 5 videos for Bold) keep the gate working
+   (browse 10s, download 10s, 5 videos for Bold) keep the gate working
    when the config fetch fails or the fields are missing. */
 function vgGateOpts(){
 var g = (CFG && CFG.ads && CFG.ads.gate) ? CFG.ads.gate : null;
 var th = (g && g.timeThresholds) ? g.timeThresholds : null;
-var br = th? parseInt(th.browse, 10): NaN; if(isNaN(br) || br < 0) br = 30;
-var dl = th? parseInt(th.download, 10): NaN; if(isNaN(dl) || dl < 0) dl = 60;
+var br = th? parseInt(th.browse, 10): NaN; if(isNaN(br) || br < 0) br = 10;
+var dl = th? parseInt(th.download, 10): NaN; if(isNaN(dl) || dl < 0) dl = 10;
 var vn = g? parseInt(g.videosForBold, 10): NaN; if(isNaN(vn) || vn < 1) vn = 5;
 return {browse: br, download: dl, videosForBold: vn};
 }
@@ -2312,6 +2329,7 @@ var vgAd = null;
 var vgLastTime = 0;
 var vgImpressionFired = false;
 var vgFiredQ = {};
+var vgVideoCredited = false;
 var vgDuration = 0;
 var vgVideoSeq = 0;
 function vgSetMsg(s){ var el = document.getElementById("vgMsg"); if(el){ el.textContent = s || ""; } }
@@ -2423,6 +2441,7 @@ if(!ad){ vgTryTags(tags, idx + 1, seq); return; }
 vgAd = ad;
 vgImpressionFired = false;
 vgFiredQ = {};
+vgVideoCredited = false;
 vgLastTime = 0;
 vgDuration = ad.duration || 0;
 var v = document.getElementById("vgVideo");
@@ -2435,25 +2454,39 @@ try{ p = v.play(); }catch(e){ p = null; }
 if(p && p.catch){ p.catch(function(){ vgShowState("playbtn"); }); }
 });
 }
-function vgOnEnded(){
-if(!vgTargetHeat){ return; }
-vgFire(vgAd? vgAd.tracking.complete: null);
-/* Video path: each completed video also banks one video toward the
-   Bold unlock (capped at videosForBold). The browse action below is
-   unchanged — a completed video still counts as 1 browse action. */
+/* Bank one video-ad credit. Called after 10s of playback (10s rule)
+   or on ended for videos shorter than 10s. Banks once per video:
+   the video is paused when banked at 10s so it never double-counts
+   and never keeps playing hidden behind the action buttons. The
+   VAST "complete" tracking still fires only on a real ended. */
+function vgBankVideo(){
+if(!vgTargetHeat || vgVideoCredited){ return; }
+vgVideoCredited = true;
+var v = document.getElementById("vgVideo");
+if(v){ try{ v.pause(); }catch(e){} }
+/* Each video also banks one video toward the Bold unlock (capped
+   at videosForBold). The browse action below is unchanged — a video
+   counts as 1 browse action. */
 var p = vgProg();
 var need = vgVideosNeeded();
 if(p.videos < need){ p.videos = p.videos + 1; vgSetProg(p); }
 vgCountAction("browse");
+}
+function vgOnEnded(){
+if(!vgTargetHeat){ return; }
+vgFire(vgAd? vgAd.tracking.complete: null);
+vgBankVideo();
 }
 /* Count one VERIFIED ad action ("browse" or "download") toward the
    target tier. A watched video counts as browse (and banks one video
    toward the 5-video Bold path — see vgOnEnded); a time-verified
    Download click counts as download; a time-verified Browse click
    counts as browse.
-   CORRECTED model (2026-11-20): every completed ad action banks 1
-   credit. THREE credits unlock a 3-minute trial. A download does
-   NOT grant 24h here — a click + 60s stay is not an install. The
+   CORRECTED model (2026-11-20, 10s rule 2026-11-21): every completed
+   ad action banks 1 credit — one ad counts after 10s (video: 10s
+   playback; browse/download: 10s away). THREE credits (30s total)
+   unlock a 3-minute trial. A download does NOT grant 24h here — a
+   click + 10s stay is not an install. The
    download keeps its pending install record; 24h is granted only
    when the network postback confirms a real install (cpCheckInstall).
    When a trial session is active the tiers unlock and the gate
@@ -2506,7 +2539,7 @@ vgShowState("actions");
 /* Download / browse link ads: open the network's zoneCode in a new tab.
    The click counts for NOTHING — it only starts a pending action. The
    action counts when the player has spent >= the threshold AWAY from
-   this tab (browse 30s, download 60s — ads.gate.timeThresholds).
+   this tab (browse 10s, download 10s — ads.gate.timeThresholds).
    Away time is measured from when this tab/window was hidden or
    blurred, and ACCUMULATES across visits (persisted in localStorage):
    a too-short stay shows the cumulative seconds and how many are
@@ -2848,6 +2881,9 @@ if(q >= 0.25 && !vgFiredQ.firstQuartile){ vgFiredQ.firstQuartile = true; vgFire(
 if(q >= 0.5 && !vgFiredQ.midpoint){ vgFiredQ.midpoint = true; vgFire(vgAd? vgAd.tracking.midpoint: null); }
 if(q >= 0.75 && !vgFiredQ.thirdQuartile){ vgFiredQ.thirdQuartile = true; vgFire(vgAd? vgAd.tracking.thirdQuartile: null); }
 }
+/* 10s rule (2026-11-21): one video ad counts after 10s of playback,
+   not only when it ends. Shorter videos still count on ended. */
+if(v.currentTime >= 10){ vgBankVideo(); }
 });
 v.addEventListener("play", function(){
 vgSetMsg("");
@@ -3130,8 +3166,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 17;
-var APP_VERSION_NAME = "2.6";
+var APP_VERSION_CODE = 18;
+var APP_VERSION_NAME = "2.7";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

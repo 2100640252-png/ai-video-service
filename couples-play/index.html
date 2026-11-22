@@ -610,14 +610,14 @@ vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
 vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
 vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
-vgReq2:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app for 24h play"},
-vgReq3:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载并安装一款广告 App，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app for 24h play"},
+vgReq2:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载安装广告 App，进去注册并玩 1 分钟，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app, register and play 1 minute in it, for 24h play"},
+vgReq3:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载安装广告 App，进去注册并玩 1 分钟，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app, register and play 1 minute in it, for 24h play"},
 vgPermWhy:{zh:"需要悬浮窗权限，因为它是广告倒计时：你在看广告的时候，它会浮在广告页面上，告诉你已经看了几秒、还差几秒。没有它，我们没法给你计时、没法确认你看了广告，所以只能玩温柔挡位。",en:"The floating-window permission is needed because it is the ad countdown: while you watch an ad, it floats over the ad page and shows how many seconds you have watched and how many are left. Without it we cannot time you or confirm you watched the ad, so you can only play the Mild tier."},
 vgPermGo:{zh:"去开启悬浮窗权限",en:"Enable the floating-window permission"},
 vgPermOnlyMild:{zh:"没有悬浮窗权限，只能玩温柔挡位。",en:"Without the floating-window permission, only the Mild tier is available."},
 vgAdCount:{zh:"已看 {GOT}/{NEED} 个广告",en:"Watched {GOT}/{NEED} ads"},
 vgDlVerify:{zh:"下载已记录，正在确认是否真的安装…",en:"Download recorded — verifying whether it was really installed…"},
-vgInstalledBrowse:{zh:"已安装！请回到广告 App 注册并浏览 10 秒，再返回游戏解锁 24 小时",en:"Installed! Go back to the ad app, register and browse for 10 seconds, then return to unlock 24 hours"},
+vgInstalledBrowse:{zh:"已安装！正在打开广告 App，请在里面注册并玩 1 分钟，再返回游戏解锁 24 小时",en:"Installed! Opening the ad app — register and play for 1 minute there, then return to unlock 24 hours"},
 vgUnlocked24:{zh:"已解锁 24 小时！畅玩吧！",en:"Unlocked for 24 hours! Enjoy!"},
 vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
 vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
@@ -2175,7 +2175,9 @@ vgInstallAt = ev.at;
 vgDlState = "installed";
 FW.update();
 var awaySinceInstall = Math.floor((Date.now() - ev.at) / 1000);
-if(awaySinceInstall >= 10){
+/* 2.15: the player must use the ad app for 1 MINUTE (60s), not 10s —
+   register in it and play it, then return to unlock 24h. */
+if(awaySinceInstall >= 60){
 try{ cpGrantSession("full"); }catch(e){}
 try{ cpSetPendingInstall(null); }catch(e){}
 vgDlState = "unlocked";
@@ -2188,7 +2190,11 @@ try{ vgSetStatus(""); }catch(e){}
 try{ cpUpdateTimer(); }catch(e){}
 try{ syncHeatSeg(); }catch(e){}
 } else {
+/* 2.15: installed but not yet 1 minute in the ad app — force the player
+   back into it (auto-launch), so they register and play there. The
+   floating window stays on top showing the state. */
 try{ vgSetMsg(t("vgInstalledBrowse")); }catch(e){}
+try{ FW.launchInstalledApp(); }catch(e){}
 }
 }).catch(function(){});
 }
@@ -2348,7 +2354,7 @@ return null;
 function vgFetchVast(url, hops, done){
 if(hops > 3){ done(null); return; }
 var ctrl = (typeof AbortController !== "undefined")? new AbortController(): null;
-var timer = ctrl? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, 8000): null;
+var timer = ctrl? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, 15000): null;
 fetch(url, {cache:"no-store", signal: ctrl? ctrl.signal: undefined})
 .then(function(r){ if(timer){ clearTimeout(timer); } if(!r.ok){ throw new Error("vast http " + r.status); } return r.text(); })
 .then(function(txt){
@@ -2860,6 +2866,15 @@ if(!FW.hasPlugin()){ return Promise.resolve(); }
 try{
 return window.Capacitor.Plugins.FloatingWindow.clearInstall().catch(function(){});
 }catch(e){ return Promise.resolve(); }
+},
+/* 2.15: force-open the ad app the player just installed. The native side
+   reads the package the InstallReceiver recorded and launches it, so the
+   player is forced into the ad app to register and play 1 minute. */
+launchInstalledApp: function(){
+if(!FW.hasPlugin()){ return Promise.resolve({launched:false}); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.launchInstalledApp().catch(function(){ return {launched:false}; });
+}catch(e){ return Promise.resolve({launched:false}); }
 }
 };
 function vgSetStatus(s){ var el = document.getElementById("vgStatus"); if(el){ el.textContent = s || ""; } }
@@ -3324,8 +3339,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 25;
-var APP_VERSION_NAME = "2.14";
+var APP_VERSION_CODE = 26;
+var APP_VERSION_NAME = "2.15";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

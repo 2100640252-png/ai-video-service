@@ -2308,7 +2308,13 @@ return n;
 }
 function vgPickMedia(linear){
 var mfs = linear.getElementsByTagName("MediaFile");
-var best = null, bestScore = -1;
+/* 2.15: pick the SMALLEST mp4, not the largest. The old code picked the
+   highest width (404x720, ~3.6 MB), which takes 10+ seconds to buffer
+   on a slow phone connection — the user just sees a black "loading"
+   box and thinks the ad won't load. The smallest (202x360, ~1.7 MB)
+   starts playing ~2x faster, and on a phone gate (~350px wide) it
+   looks the same. */
+var best = null, bestScore = Infinity;
 for(var i=0;i<mfs.length;i++){
 var m = mfs[i];
 var type = (m.getAttribute("type") || "").toLowerCase();
@@ -2316,10 +2322,9 @@ if(type !== "video/mp4") continue;
 var url = (m.textContent || "").replace(/^\s+|\s+$/g, "");
 if(!url) continue;
 var w = parseInt(m.getAttribute("width") || "0", 10); if(isNaN(w)) w = 0;
-if(w > 1280) w = 1280;
 var b = parseInt(m.getAttribute("bitrate") || "0", 10); if(isNaN(b)) b = 0;
 var score = w * 1000000 + b;
-if(score > bestScore){ bestScore = score; best = {url: url, width: w, bitrate: b}; }
+if(score < bestScore){ bestScore = score; best = {url: url, width: w, bitrate: b}; }
 }
 return best;
 }

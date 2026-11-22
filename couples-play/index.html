@@ -1852,25 +1852,28 @@ var closeBtn = document.getElementById("adClose");
 if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad ✕";}
 ov.classList.add("open");
 }
-/* ================= Page ad scripts (native banner only) =================
-   Load-once scripts: only the Adsterra Native Banner now. 2.13 REMOVED
-   the Adsterra Social Bar and the JuicyAds Interstitial Native: on a
-   phone the Social Bar notification is wide enough to cover the video
-   area, it has no close button, and tapping it jumps to the browser
-   with no floating-window countdown; the JuicyAds "interstitial" is a
-   full-screen overlay by name and earns $0 (100% filler). Neither can
-   trigger the floating window, so per the owner's order they are
-   CLOSED, not fixed. The game screen itself shows only the hardcoded
-   JuicyAds banner. Popunders were REMOVED from this page (2026-11-19):
-   their transparent click-catching layer ate every game tap after an
-   unlock, so the popunder format cannot live on a click-driven game
-   page at all. The remote config can override these through
-   ads.pageScripts: [{key, enabled, code}]. When the config has not
-   arrived yet, the built-in defaults below run, so the ads keep
-   working. Toggle each one from the backend. */
-var PS_DEFAULTS = [
-{key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"}
-];
+/* ================= Page ad scripts (ALL CLOSED in 2.14) =================
+   This list is EMPTY on purpose. Every injected overlay ad has been
+   closed because it could cover the video area on a phone and none of
+   them can trigger the floating window (owner's order, 2026-11-22):
+   Adsterra Social Bar + JuicyAds Interstitial (2.13), Adsterra Native
+   Banner (2.14). The gate now shows only the VAST video ad + the 3
+   buttons. The game screen itself shows only the hardcoded JuicyAds
+   banner. Popunders were REMOVED from this page (2026-11-19): their
+   transparent click-catching layer ate every game tap after an unlock,
+   so the popunder format cannot live on a click-driven game page at
+   all. The remote config can override these through ads.pageScripts:
+   [{key, enabled, code}]. When the config has not arrived yet, the
+   built-in defaults below run, so the ads keep working. Toggle each
+   one from the backend. */
+var PS_DEFAULTS = [];
+/* 2.14: pageScripts is EMPTY — every injected overlay ad has been closed
+   (Social Bar + JuicyAds Interstitial in 2.13, Adsterra Native Banner
+   in 2.14). All three could cover the video area on a phone, none can
+   trigger the floating window, and the owner ordered them closed.
+   The gate now shows only the VAST video ad + the 3 buttons. The
+   Native Banner slot (#vgNativeSlot) stays in the markup (harmless
+   when empty) so the layout does not shift. */
 var psLoaded = {};
 var psDone = false;
 function loadPageScripts(list){
@@ -3321,8 +3324,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 24;
-var APP_VERSION_NAME = "2.13";
+var APP_VERSION_CODE = 25;
+var APP_VERSION_NAME = "2.14";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

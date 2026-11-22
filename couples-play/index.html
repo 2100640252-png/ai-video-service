@@ -213,6 +213,13 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 /* ---------- Video ad gate (unlock heat tier 2 / 3) ---------- */
 #videoGateOverlay{position:fixed;inset:0;z-index:90;background:rgba(8,1,4,.92);display:none;align-items:center;justify-content:center;padding:20px}
 #videoGateOverlay.open{display:flex}
+#dlPageOverlay{position:fixed;inset:0;z-index:91;background:rgba(8,1,4,.92);display:none;align-items:center;justify-content:center;padding:20px}
+#dlPageOverlay.open{display:flex}
+#dlPageOverlay .vg-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:100%;max-width:520px;padding:18px;box-shadow:var(--shadow);text-align:center}
+#dlPageOverlay h3{font-family:"Noto Serif SC",serif;font-size:19px;margin:0 0 8px}
+#dlPageOverlay p{margin:0 0 12px}
+#dlPageOverlay .ad-label{font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;margin-bottom:10px}
+#dlPageOverlay .btn{display:block;width:100%;margin:8px 0}
 #videoGateOverlay .vg-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:100%;max-width:520px;padding:18px;box-shadow:var(--shadow);text-align:center}
 #videoGateOverlay .ad-label{font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;margin-bottom:10px}
 #videoGateOverlay h3{font-family:"Noto Serif SC",serif;font-size:19px;margin:0 0 8px}
@@ -465,6 +472,24 @@ footer p{margin:0;max-width:760px}
 </div>
 </div>
 
+<!-- Download page (2.16, "second page"): the owner wants a dedicated
+     download link on a second page inside the game. Tapping the link
+     triggers the floating window + timer; after install the 1-minute
+     countdown runs (prompting "please register first" but the time
+     keeps counting — registration cannot be verified, so it is only a
+     prompt, never a gate). -->
+<div id="dlPageOverlay" role="dialog" aria-modal="true" aria-label="下载广告">
+<div class="vg-box">
+<div class="vg-top"><button class="btn" id="dlPageBackBtn">← 返回</button></div>
+<div class="ad-label">AD · 下载解锁</div>
+<h3>下载广告 App · 解锁 24 小时</h3>
+<p id="dlPageReq">点下面的下载链接，游戏内打开广告页；下载安装好广告 App，悬浮窗会倒计时 1 分钟（请先注册，时间照常算）；1 分钟到了回游戏，立刻解锁 24 小时。</p>
+<p id="dlPageMsg"></p>
+<button class="btn gold" id="dlPageBtn">⬇ 下载广告 App</button>
+<button class="btn" id="dlPageCloseBtn">关闭 ✕</button>
+</div>
+</div>
+
 <!-- Referral (推广返现): register to get your invite code, invite friends,
      earn $5 each time one of them unlocks the Bold tier. Closes freely. -->
 <div id="refOverlay" role="dialog" aria-modal="true" aria-label="推广返现">
@@ -610,14 +635,14 @@ vgBack:{zh:"← 返回",en:"← Back"},
 vgVideoBtn:{zh:"▶ 看视频广告",en:"▶ Watch video ad"},
 vgDlBtn:{zh:"⬇ 下载广告（需停留 {S} 秒）",en:"⬇ Download ad (stay {S}s)"},
 vgBrowseBtn:{zh:"↗ 浏览广告（需看 {S} 秒）",en:"↗ Browse ad (watch {S}s)"},
-vgReq2:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载安装广告 App，进去注册并玩 1 分钟，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app, register and play 1 minute in it, for 24h play"},
-vgReq3:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载安装广告 App，进去注册并玩 1 分钟，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app, register and play 1 minute in it, for 24h play"},
+vgReq2:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载安装广告 App，玩 1 分钟，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app, play 1 minute in it, for 24h play"},
+vgReq3:{zh:"每个广告看满 10 秒，共 3 个广告（30 秒），试玩 3 分钟；下载安装广告 App，玩 1 分钟，畅玩 24 小时",en:"Watch each ad for 10s — 3 ads (30s total) for a 3-min trial; download and install an advertised app, play 1 minute in it, for 24h play"},
 vgPermWhy:{zh:"需要悬浮窗权限，因为它是广告倒计时：你在看广告的时候，它会浮在广告页面上，告诉你已经看了几秒、还差几秒。没有它，我们没法给你计时、没法确认你看了广告，所以只能玩温柔挡位。",en:"The floating-window permission is needed because it is the ad countdown: while you watch an ad, it floats over the ad page and shows how many seconds you have watched and how many are left. Without it we cannot time you or confirm you watched the ad, so you can only play the Mild tier."},
 vgPermGo:{zh:"去开启悬浮窗权限",en:"Enable the floating-window permission"},
 vgPermOnlyMild:{zh:"没有悬浮窗权限，只能玩温柔挡位。",en:"Without the floating-window permission, only the Mild tier is available."},
 vgAdCount:{zh:"已看 {GOT}/{NEED} 个广告",en:"Watched {GOT}/{NEED} ads"},
 vgDlVerify:{zh:"下载已记录，正在确认是否真的安装…",en:"Download recorded — verifying whether it was really installed…"},
-vgInstalledBrowse:{zh:"已安装！正在打开广告 App，请在里面注册并玩 1 分钟，再返回游戏解锁 24 小时",en:"Installed! Opening the ad app — register and play for 1 minute there, then return to unlock 24 hours"},
+vgInstalledBrowse:{zh:"已安装！倒计时 1 分钟（请先注册，时间照常算），到了返回游戏解锁 24 小时",en:"Installed! 1-minute countdown running (please register first — the timer keeps counting), return when it ends to unlock 24 hours"},
 vgUnlocked24:{zh:"已解锁 24 小时！畅玩吧！",en:"Unlocked for 24 hours! Enjoy!"},
 vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
 vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
@@ -2185,6 +2210,7 @@ FW.update();
 FW.clearInstall();
 vgDlTapAt = 0;
 vgInstallAt = 0;
+try{ cpHideDownloadPage(); }catch(e){}
 try{ vgSetMsg(t("vgUnlocked24")); }catch(e){}
 try{ vgSetStatus(""); }catch(e){}
 try{ cpUpdateTimer(); }catch(e){}
@@ -2972,6 +2998,33 @@ var list = (CFG && CFG.ads && CFG.ads.pageScripts && CFG.ads.pageScripts.length)
 loadPageScripts(list);
 }catch(e){}
 }
+/* ================= Download page (2.16, "second page") =================
+   A dedicated full-screen page inside the game holding the download
+   link. Tapping the link triggers the floating window + timer and
+   opens the ad download in the in-app browser. Registration is only
+   a prompt during the countdown — it cannot be verified, so the timer
+   never waits for it. */
+function cpShowDownloadPage(){
+var o = document.getElementById("dlPageOverlay");
+if(o){ o.classList.add("open"); }
+var g = document.getElementById("videoGateOverlay");
+if(g){ g.classList.remove("open"); }
+}
+function cpHideDownloadPage(){
+var o = document.getElementById("dlPageOverlay");
+if(o){ o.classList.remove("open"); }
+}
+var dlPageBtn = document.getElementById("dlPageBtn");
+if(dlPageBtn){ dlPageBtn.onclick = function(){
+var m = document.getElementById("dlPageMsg");
+if(m){ m.textContent = "正在打开下载…"; }
+vgPickAd("download");
+}; }
+var dlPageBackBtn = document.getElementById("dlPageBackBtn");
+if(dlPageBackBtn){ dlPageBackBtn.onclick = function(){ cpHideDownloadPage(); vgOpenGate(vgTargetHeat); }; }
+var dlPageCloseBtn = document.getElementById("dlPageCloseBtn");
+if(dlPageCloseBtn){ dlPageCloseBtn.onclick = function(){ cpHideDownloadPage(); }; }
+
 function vgOpenGate(targetHeat){
 vgTargetHeat = targetHeat;
 var ov = document.getElementById("videoGateOverlay");
@@ -3089,7 +3142,11 @@ if(vgRetryBtn){ vgRetryBtn.onclick = function(){ vgLoadAndPlay(); }; }
 var vgVideoBtn = document.getElementById("vgVideoBtn");
 if(vgVideoBtn){ vgVideoBtn.onclick = function(){ vgLoadAndPlay(); }; }
 var vgDlBtn = document.getElementById("vgDlBtn");
-if(vgDlBtn){ vgDlBtn.onclick = function(){ vgPickAd("download"); }; }
+/* 2.16: the download button opens the dedicated download page (the
+   "second page") instead of jumping straight to the ad link. The
+   download page holds the download link; tapping it triggers the
+   floating window + timer and opens the ad in the in-app browser. */
+if(vgDlBtn){ vgDlBtn.onclick = function(){ cpShowDownloadPage(); }; }
 var vgBrowseBtn = document.getElementById("vgBrowseBtn");
 if(vgBrowseBtn){ vgBrowseBtn.onclick = function(){ vgPickAd("browse"); }; }
 var vgPlayBtn = document.getElementById("vgPlayBtn");
@@ -3344,8 +3401,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 26;
-var APP_VERSION_NAME = "2.15";
+var APP_VERSION_CODE = 27;
+var APP_VERSION_NAME = "2.16";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

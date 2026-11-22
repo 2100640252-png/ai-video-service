@@ -1852,21 +1852,24 @@ var closeBtn = document.getElementById("adClose");
 if(closeBtn){ closeBtn.textContent = LANG==="zh"? "关闭广告 ✕": "Close ad ✕";}
 ov.classList.add("open");
 }
-/* ================= Page ad scripts (social bar / native / interstitial) =====
-   Load-once scripts (not tied to a game event): Adsterra Social Bar +
-   Native Banner, JuicyAds Interstitial Native. They load ONLY inside
-   the tier gate when it opens (see vgLoadGateAds). The game screen
-   itself shows only the hardcoded JuicyAds banner. Popunders were
-   REMOVED from this page (2026-11-19): their transparent click-catching
-   layer ate every game tap after an unlock, so the popunder format
-   cannot live on a click-driven game page at all. The remote config can
-   override these through ads.pageScripts: [{key, enabled, code}]. When
-   the config has not arrived yet, the built-in defaults below run, so
-   the ads keep working. Toggle each one from the backend. */
+/* ================= Page ad scripts (native banner only) =================
+   Load-once scripts: only the Adsterra Native Banner now. 2.13 REMOVED
+   the Adsterra Social Bar and the JuicyAds Interstitial Native: on a
+   phone the Social Bar notification is wide enough to cover the video
+   area, it has no close button, and tapping it jumps to the browser
+   with no floating-window countdown; the JuicyAds "interstitial" is a
+   full-screen overlay by name and earns $0 (100% filler). Neither can
+   trigger the floating window, so per the owner's order they are
+   CLOSED, not fixed. The game screen itself shows only the hardcoded
+   JuicyAds banner. Popunders were REMOVED from this page (2026-11-19):
+   their transparent click-catching layer ate every game tap after an
+   unlock, so the popunder format cannot live on a click-driven game
+   page at all. The remote config can override these through
+   ads.pageScripts: [{key, enabled, code}]. When the config has not
+   arrived yet, the built-in defaults below run, so the ads keep
+   working. Toggle each one from the backend. */
 var PS_DEFAULTS = [
-{key:"adsterra-socialbar", enabled:true, code:"<script data-cfasync=\"false\" src=\"https://biomanos.org/14/a22b58ac97495a3d3ecdedae2fffba6e\"><\/script>"},
-{key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"},
-{key:"juicyads-interstitial", enabled:true, code:"<script type=\"text/javascript\" data-id=\"juicyads-native-ads\" data-ad-zone=\"1133532\" data-targets=\"a\" src=\"https://js.juicyads.com/juicyads.native-ads.min.js\"><\/script>"}
+{key:"adsterra-native", enabled:true, code:"<script async=\"async\" data-cfasync=\"false\" src=\"https://biomanos.org/21/0925149469bb04c106e214f794268087\"><\/script><div id=\"container-0925149469bb04c106e214f794268087\"><\/div>"}
 ];
 var psLoaded = {};
 var psDone = false;
@@ -2721,6 +2724,23 @@ if(c) return c;
 }
 return fallback;
 }
+/* 2.13: open an ad URL INSIDE the game when possible. In the app the
+   Capacitor Browser plugin opens a Chrome Custom Tab inside the app
+   (the player stays in the game, the floating window stays on top,
+   back/X returns to the game). On the website there is no Capacitor,
+   so it falls back to window.open. The away-time timer keeps working
+   either way: opening the tab fires blur/visibilitychange, which sets
+   the vgLeftGame latch the timer banks on. */
+function cpOpenAdUrl(url){
+try{
+if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser && window.Capacitor.Plugins.Browser.open){
+var p = window.Capacitor.Plugins.Browser.open({url: url});
+if(p && p.catch){ p.catch(function(){ try{ window.open(url, "_blank"); }catch(e){} }); }
+return;
+}
+}catch(e){}
+try{ window.open(url, "_blank"); }catch(e){}
+}
 function vgOpenLink(kind){
 vgVideoSeq++;
 var v = document.getElementById("vgVideo");
@@ -2756,7 +2776,7 @@ FW.noteDownload();
 vgDlState = "";
 }
 vgLeftGame = false;
-try{ window.open(url, "_blank"); }catch(e){}
+cpOpenAdUrl(url);
 vgSetMsg("");
 }
 /* ================= Floating-window bridge (Gate v4) =================
@@ -3030,7 +3050,7 @@ try{ v.muted = false; }catch(e){}
 try{ var p = v.play(); if(p && p.catch){ p.catch(function(){}); } }catch(e){}
 return;
 }
-if(vgAd && vgAd.clickThrough){ window.open(vgAd.clickThrough, "_blank"); }
+if(vgAd && vgAd.clickThrough){ cpOpenAdUrl(vgAd.clickThrough); }
 });
 v.addEventListener("error", function(){
 if(vgAd){ vgShowNoAd(); }
@@ -3301,8 +3321,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 23;
-var APP_VERSION_NAME = "2.12";
+var APP_VERSION_CODE = 24;
+var APP_VERSION_NAME = "2.13";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

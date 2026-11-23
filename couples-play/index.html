@@ -643,6 +643,11 @@ vgPermOnlyMild:{zh:"没有悬浮窗权限，只能玩温柔挡位。",en:"Withou
 vgAdCount:{zh:"已看 {GOT}/{NEED} 个广告",en:"Watched {GOT}/{NEED} ads"},
 vgDlVerify:{zh:"下载已记录，正在确认是否真的安装…",en:"Download recorded — verifying whether it was really installed…"},
 vgInstalledBrowse:{zh:"已安装！倒计时 1 分钟（请先注册，时间照常算），到了返回游戏解锁 24 小时",en:"Installed! 1-minute countdown running (please register first — the timer keeps counting), return when it ends to unlock 24 hours"},
+/* 2.17 新增文案（旧条目一字不动）：B档前台时长未满时的提示、
+   用量权限一次性提示、去开启按钮。 */
+vgInstalledBrowseB:{zh:"已安装！在广告 App 里已待 {FG}/60 秒，再待 {LEFT} 秒就回游戏解锁 24 小时",en:"Installed! You've spent {FG}/60s in the ad app — {LEFT}s more, then return to unlock 24h"},
+vgUsagePrompt:{zh:"建议开启「使用情况访问」权限：这样能双重确认你在广告 App 里真的待满 1 分钟，更稳妥。不开也能用 60 秒倒计时解锁，再点一次下载广告即可跳过。",en:"Tip: enable Usage Access so we can double-confirm you really spent 1 minute in the ad app. Without it, the 60-second countdown still unlocks — tap Download ad again to skip."},
+vgUsageGo:{zh:"去开启用量权限",en:"Enable Usage Access"},
 vgUnlocked24:{zh:"已解锁 24 小时！畅玩吧！",en:"Unlocked for 24 hours! Enjoy!"},
 vgPermNeed:{zh:"请在设置里开启悬浮窗权限，然后返回点「继续看广告」",en:"Please enable the floating-window permission in Settings, then come back and tap “Continue”"},
 vgContinue:{zh:"我已开启，继续看广告",en:"Permission granted — continue"},
@@ -2191,18 +2196,15 @@ return false;
    website has no install detection, so this is a no-op there
    (FW.hasPlugin() is false). The postback poller (cpCheckInstall)
    stays as the website / backup path. */
-function cpCheckNativeInstall(){
-if(!FW.hasPlugin()){ return; }
-FW.checkInstall().then(function(ev){
-if(!ev || !ev.installed || !ev.at){ return; }
-if(vgDlTapAt && ev.at < vgDlTapAt){ return; }
-vgInstallAt = ev.at;
-vgDlState = "installed";
-FW.update();
-var awaySinceInstall = Math.floor((Date.now() - ev.at) / 1000);
-/* 2.15: the player must use the ad app for 1 MINUTE (60s), not 10s —
-   register in it and play it, then return to unlock 24h. */
-if(awaySinceInstall >= 60){
+/* 2.17: A档 + B档双重确认才解锁 24 小时。
+   A档：安装后墙上时间满 60 秒（倒计时走完）。
+   B档：若已授权“使用情况访问”，广告 App 真实前台时长也要满 60 秒；
+   未授权时 B档不生效，只看 A档（不卡住用户）。
+   两个 Promise 是异步的，用 vgUnlocking24 防重复并发解锁。 */
+var vgUnlocking24 = false;
+function cpGrant24FromInstall(){
+if(vgUnlocking24){ return; }
+vgUnlocking24 = true;
 try{ cpGrantSession("full"); }catch(e){}
 try{ cpSetPendingInstall(null); }catch(e){}
 vgDlState = "unlocked";
@@ -2215,12 +2217,41 @@ try{ vgSetMsg(t("vgUnlocked24")); }catch(e){}
 try{ vgSetStatus(""); }catch(e){}
 try{ cpUpdateTimer(); }catch(e){}
 try{ syncHeatSeg(); }catch(e){}
-} else {
-/* 2.15: installed but not yet 1 minute in the ad app — force the player
-   back into it (auto-launch), so they register and play there. The
-   floating window stays on top showing the state. */
-try{ vgSetMsg(t("vgInstalledBrowse")); }catch(e){}
+vgUnlocking24 = false;
+}
+function cpCheckNativeInstall(){
+if(!FW.hasPlugin()){ return; }
+FW.checkInstall().then(function(ev){
+if(!ev || !ev.installed || !ev.at){ return; }
+if(vgDlTapAt && ev.at < vgDlTapAt){ return; }
+vgInstallAt = ev.at;
+vgDlState = "installed";
+FW.update();
+var awaySinceInstall = Math.floor((Date.now() - ev.at) / 1000);
+if(awaySinceInstall >= 60){
+/* A档已满 → 查 B档。未授权用量访问：直接按 A档解锁；
+   已授权：前台满 60 秒才解锁，否则回广告 App 继续待。 */
+FW.hasUsageAccess().then(function(granted){
+if(!granted){ cpGrant24FromInstall(); return; }
+FW.getForegroundSeconds().then(function(r){
+if(r && r.satisfied){ cpGrant24FromInstall(); return; }
+var fg = (r && typeof r.foregroundSeconds === "number" && r.foregroundSeconds >= 0)? r.foregroundSeconds : 0;
+var left = Math.max(0, 60 - fg);
+try{ vgSetMsg(t("vgInstalledBrowseB").replace("{FG}", String(fg)).replace("{LEFT}", String(left))); }catch(e){}
 try{ FW.launchInstalledApp(); }catch(e){}
+}).catch(function(){ cpGrant24FromInstall(); });
+}).catch(function(){ cpGrant24FromInstall(); });
+} else {
+/* A档未满：提示里带上 B档前台进度（已授权时），并把玩家推回广告 App。 */
+try{ FW.launchInstalledApp(); }catch(e){}
+FW.hasUsageAccess().then(function(granted){
+if(!granted){ try{ vgSetMsg(t("vgInstalledBrowse")); }catch(e){} return; }
+FW.getForegroundSeconds().then(function(r){
+var fg = (r && typeof r.foregroundSeconds === "number" && r.foregroundSeconds >= 0)? r.foregroundSeconds : 0;
+var left = Math.max(0, 60 - fg);
+try{ vgSetMsg(t("vgInstalledBrowseB").replace("{FG}", String(fg)).replace("{LEFT}", String(left))); }catch(e){}
+}).catch(function(){ try{ vgSetMsg(t("vgInstalledBrowse")); }catch(e){} });
+}).catch(function(){ try{ vgSetMsg(t("vgInstalledBrowse")); }catch(e){} });
 }
 }).catch(function(){});
 }
@@ -2252,6 +2283,10 @@ try{ syncHeatSeg(); }catch(e){}
 }).catch(function(){ /* table missing or offline — keep waiting */ });
 }
 setInterval(function(){ try{ cpCheckInstall(); }catch(e){} }, 30000);
+/* 2.17：已安装状态下每 10 秒复查一次原生安装（A档 + B档）。玩家在广告
+   App 里待满后，即使悬浮窗自动拉回被系统拦住，游戏回前台时也能及时
+   解锁。网站上 FW.hasPlugin() 为 false，cpCheckNativeInstall 直接返回。 */
+setInterval(function(){ try{ if(typeof vgDlState !== "undefined" && vgDlState === "installed"){ cpCheckNativeInstall(); } }catch(e){} }, 10000);
 /* Built-in fallback: the gate must never silently vanish because the remote
    config fetch failed or timed out (CFG is null until it loads). When the
    remote config carries ads.videoGate it overrides this; only an explicit
@@ -2809,6 +2844,9 @@ if(kind === "download"){
 vgDlState = "downloading";
 vgDlTapAt = Date.now();
 FW.noteDownload();
+/* 2.17：顺手尽力申请一次通知权限（Android 13+），“时间到”通知是回游
+   戏的备份通道；不阻塞下载流程，没授权时悬浮窗点回仍可用。 */
+try{ FW.requestNotificationPermission(); }catch(e){}
 } else if(vgDlState === "downloading"){
 /* Switched to a browse ad: a stale "downloading" would make the
    overlay say Downloading during a browse. (An "installed" /
@@ -2906,6 +2944,41 @@ if(!FW.hasPlugin()){ return Promise.resolve({launched:false}); }
 try{
 return window.Capacitor.Plugins.FloatingWindow.launchInstalledApp().catch(function(){ return {launched:false}; });
 }catch(e){ return Promise.resolve({launched:false}); }
+},
+/* 2.17 B档：是否已授权“使用情况访问”（用量统计）。网站上永远 false。 */
+hasUsageAccess: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(false); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.hasUsageAccess().then(function(r){ return !!(r && r.granted); }).catch(function(){ return false; });
+}catch(e){ return Promise.resolve(false); }
+},
+/* 2.17 B档：打开系统“使用情况访问”设置页（Android 无弹窗，必须用户手动开）。 */
+requestUsageAccess: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.requestUsageAccess().catch(function(){});
+}catch(e){ return Promise.resolve(); }
+},
+/* 2.17 B档：广告 App 自安装以来的真实前台秒数。未授权时 {granted:false}。 */
+getForegroundSeconds: function(){
+if(!FW.hasPlugin()){ return Promise.resolve({granted:false, foregroundSeconds:-1, satisfied:false}); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.getForegroundSeconds().catch(function(){ return {granted:false, foregroundSeconds:-1, satisfied:false}; });
+}catch(e){ return Promise.resolve({granted:false, foregroundSeconds:-1, satisfied:false}); }
+},
+/* 2.17：把游戏带回前台（悬浮窗点回 / 通知点回的 JS 侧入口）。 */
+returnToGame: function(){
+if(!FW.hasPlugin()){ return Promise.resolve({returned:false}); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.returnToGame().catch(function(){ return {returned:false}; });
+}catch(e){ return Promise.resolve({returned:false}); }
+},
+/* 2.17：Android 13+ 通知权限尽力申请一次；不阻塞下载流程。 */
+requestNotificationPermission: function(){
+if(!FW.hasPlugin()){ return Promise.resolve(); }
+try{
+return window.Capacitor.Plugins.FloatingWindow.requestNotificationPermission().catch(function(){});
+}catch(e){ return Promise.resolve(); }
 }
 };
 function vgSetStatus(s){ var el = document.getElementById("vgStatus"); if(el){ el.textContent = s || ""; } }
@@ -3004,6 +3077,30 @@ loadPageScripts(list);
    opens the ad download in the in-app browser. Registration is only
    a prompt during the countdown — it cannot be verified, so the timer
    never waits for it. */
+/* 2.17 B档：点“下载广告”时，若未授权用量访问且从未提示过，先在门里
+   提示一次（复用 vgPlayBtn + 状态文案，不改下载页本身）：用户可点
+   “去开启用量权限”去设置里开权限，回来再点下载；也可再点一次下载广告
+   直接跳过（只走 A档 60 秒倒计时）。只提示一次，不反复打扰。 */
+function cpUsagePrompted(){
+try{ return localStorage.getItem("cp_usage_prompted") === "1"; }catch(e){ return false; }
+}
+function cpMarkUsagePrompted(){
+try{ localStorage.setItem("cp_usage_prompted", "1"); }catch(e){}
+}
+function cpDownloadWithUsageCheck(){
+if(!FW.hasPlugin()){ cpShowDownloadPage(); return; }
+FW.hasUsageAccess().then(function(granted){
+if(granted || cpUsagePrompted()){ cpShowDownloadPage(); return; }
+cpMarkUsagePrompted();
+try{ vgSetStatus(t("vgUsagePrompt")); }catch(e){}
+var pb = document.getElementById("vgPlayBtn");
+if(pb){
+pb.textContent = t("vgUsageGo");
+pb.style.display = "inline-block";
+pb.onclick = function(){ pb.style.display = "none"; try{ vgSetStatus(""); }catch(e){} FW.requestUsageAccess(); };
+}
+}).catch(function(){ cpShowDownloadPage(); });
+}
 function cpShowDownloadPage(){
 var o = document.getElementById("dlPageOverlay");
 if(o){ o.classList.add("open"); }
@@ -3146,7 +3243,7 @@ var vgDlBtn = document.getElementById("vgDlBtn");
    "second page") instead of jumping straight to the ad link. The
    download page holds the download link; tapping it triggers the
    floating window + timer and opens the ad in the in-app browser. */
-if(vgDlBtn){ vgDlBtn.onclick = function(){ cpShowDownloadPage(); }; }
+if(vgDlBtn){ vgDlBtn.onclick = function(){ cpDownloadWithUsageCheck(); }; }
 var vgBrowseBtn = document.getElementById("vgBrowseBtn");
 if(vgBrowseBtn){ vgBrowseBtn.onclick = function(){ vgPickAd("browse"); }; }
 var vgPlayBtn = document.getElementById("vgPlayBtn");
@@ -3401,8 +3498,8 @@ loadRemoteConfig();
    GitHub raw is slow/blocked on some networks, so try the jsDelivr CDN
    mirror first, then GitHub raw, 10s per attempt. Up-to-date, offline
    or a failed fetch on every mirror: stay silent — no popup, no error. */
-var APP_VERSION_CODE = 27;
-var APP_VERSION_NAME = "2.16";
+var APP_VERSION_CODE = 28;
+var APP_VERSION_NAME = "2.17";
 var VERSION_URLS = ["https://cdn.jsdelivr.net/gh/2100640252-png/ai-video-service@main/couples-play-version.json", "https://raw.githubusercontent.com/2100640252-png/ai-video-service/main/couples-play-version.json"];
 var updateApkUrl = "";
 function checkForUpdate(){

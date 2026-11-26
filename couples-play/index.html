@@ -270,6 +270,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:v
 #adBannerSlot img,#adBannerSlot iframe,#adBannerSlot video{max-width:100%;height:auto;border:0}
 #adBannerSlot iframe{width:100%;min-height:90px;position:static!important}
 #adBannerSlot ins{position:static!important}
+#adBannerSlot a{display:inline-block;padding:10px 18px;border:1px solid var(--gold);border-radius:999px;color:var(--ink);background:var(--gold-soft);text-decoration:none;font-weight:700}
 #adBanner{position:relative;z-index:1}
 /* ---------- Flirt line (rotates every 3s) ---------- */
 .flirt-line{margin:16px auto 0;max-width:640px;text-align:center;font-family:"Noto Serif SC",serif;font-size:clamp(16px,3.4vw,20px);font-weight:700;color:var(--gold);letter-spacing:.04em;min-height:1.6em;transition:opacity .45s ease,transform .45s ease;text-shadow:0 2px 14px rgba(224,36,68,.35)}
@@ -385,13 +386,9 @@ footer p{margin:0;max-width:760px}
 <div id="stopBanner" data-i="stopBanner">停了。抱一会儿，喝口水，想玩了再回来挑。</div>
 
 <!-- In-page banner ad (only for triggers whose config format is "banner") -->
-<div id="adBanner" class="open" role="complementary" aria-label="Advertisement">
+<div id="adBanner" role="complementary" aria-label="Advertisement">
 <div class="ad-banner-head"><span class="ad-label">AD · 广告</span><button id="adBannerClose" aria-label="关闭广告">✕</button></div>
-<div id="adBannerSlot"><!-- JuicyAds v3.0 -->
-<script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-<ins id="1133497" data-width="300" data-height="250"></ins>
-<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1133497});</script>
-<!--JuicyAds END--></div>
+<div id="adBannerSlot"><!-- Banner ad loads from remote config: Smartlink first, other networks fallback --></div>
 </div>
 
 <div class="grid" id="grid"></div>
@@ -1815,23 +1812,68 @@ for(var i=0;i<lbs.length;i++){ lbs[i].classList.toggle("on", lbs[i].getAttribute
 applyLang();
 renderAnnouncement();
 renderGateNotice();
+try{ loadBannerAd(); }catch(e){}
 vgEnforceHeat(); syncHeatSeg();
 }catch(e){ /* a malformed config must never break the game */ }
 }
-/* ---- Ads: fire a configured trigger through its configured network ---- */
+/* ---- Ads: Smartlink first, other networks fallback ---- */
+function adNetByKey(key){
+var nets = (CFG && CFG.ads && CFG.ads.networks) || [];
+for(var i=0;i<nets.length;i++){ if(nets[i] && nets[i].key === key) return nets[i];}
+return null;
+}
+function adPickNetwork(preferredKey){
+if(!CFG || !CFG.ads) return null;
+var order = [];
+function pushKey(k){ if(k && order.indexOf(k) < 0) order.push(k);}
+pushKey(preferredKey);
+pushKey(CFG.ads.primaryNetwork);
+(CFG.ads.fallbackNetworks || []).forEach(pushKey);
+(CFG.ads.networks || []).forEach(function(n){ if(n) pushKey(n.key);});
+for(var i=0;i<order.length;i++){
+var net = adNetByKey(order[i]);
+if(!net || net.enabled !== true) continue;
+var code = (net.zoneCode || "").replace(/^\s+|\s+$/g, "");
+if(code) return net;
+}
+return null;
+}
 function fireAd(event){
 try{
 if(!CFG || !CFG.ads || CFG.ads.master !== true) return;
 var trig = null;
 (CFG.ads.triggers || []).forEach(function(x){ if(x && x.event === event){ trig = x;}});
 if(!trig || trig.enabled !== true) return;
-var net = null;
-(CFG.ads.networks || []).forEach(function(n){ if(n && n.key === trig.network){ net = n;}});
-if(!net || net.enabled !== true) return;
+var net = adPickNetwork(trig.network);
+if(!net) return;
 var code = (net.zoneCode || "").replace(/^\s+|\s+$/g, "");
 if(!code) return;
 var format = (trig.format || "interstitial").toString().replace(/^\s+|\s+$/g, "").toLowerCase();
 showAd(code, format);
+}catch(e){}
+}
+function loadBannerAd(){
+try{
+var banner = document.getElementById("adBanner");
+var slot = document.getElementById("adBannerSlot");
+if(!banner || !slot) return;
+slot.innerHTML = "";
+if(!CFG || !CFG.ads || CFG.ads.master !== true){ banner.classList.remove("open"); return;}
+var net = adPickNetwork(CFG.ads.primaryNetwork || "adsterra");
+if(!net){ banner.classList.remove("open"); return;}
+var code = (net.zoneCode || "").replace(/^\s+|\s+$/g, "");
+if(!code){ banner.classList.remove("open"); return;}
+if(/^https?:\/\//i.test(code)){
+var a = document.createElement("a");
+a.href = code;
+a.target = "_blank";
+a.rel = "noopener sponsored";
+a.textContent = (typeof LANG !== "undefined" && LANG === "en")? "Sponsored · View offer": "广告推荐 · 点击查看";
+slot.appendChild(a);
+} else {
+injectAdCode(slot, code);
+}
+banner.classList.add("open");
 }catch(e){}
 }
 function injectAdCode(slot, code){
@@ -1888,8 +1930,8 @@ ov.classList.add("open");
    them can trigger the floating window (owner's order, 2026-11-22):
    Adsterra Social Bar + JuicyAds Interstitial (2.13), Adsterra Native
    Banner (2.14). The gate now shows only the VAST video ad + the 3
-   buttons. The game screen itself shows only the hardcoded JuicyAds
-   banner. Popunders were REMOVED from this page (2026-11-19): their
+   buttons. The game screen banner is config-driven (Smartlink first,
+   other networks fallback). Popunders were REMOVED from this page (2026-11-19): their
    transparent click-catching layer ate every game tap after an unlock,
    so the popunder format cannot live on a click-driven game page at
    all. The remote config can override these through ads.pageScripts:
@@ -2790,12 +2832,10 @@ window.addEventListener("focus", function(){ vgOnReturn(); if(cpWasHidden){ cpWa
 var VG_DL_FALLBACK = "https://auctionr.org/4/773766fc6c76e8a6733c6d7e1ef22bce";
 var VG_BR_FALLBACK = "https://ashamed-employer.com/sOkLSm";
 function vgNetZoneCode(key, fallback){
-var nets = (CFG && CFG.ads && CFG.ads.networks) || [];
-for(var i=0;i<nets.length;i++){
-if(nets[i] && nets[i].key === key){
-var c = (nets[i].zoneCode || "").replace(/^\s+|\s+$/g, "");
+var net = adPickNetwork(key);
+if(net){
+var c = (net.zoneCode || "").replace(/^\s+|\s+$/g, "");
 if(c) return c;
-}
 }
 return fallback;
 }
@@ -2820,7 +2860,7 @@ function vgOpenLink(kind){
 vgVideoSeq++;
 var v = document.getElementById("vgVideo");
 if(v){ try{ v.pause(); }catch(e){} }
-var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgNetZoneCode("hilltopads", VG_BR_FALLBACK);
+var url = (kind === "download")? vgNetZoneCode("adsterra", VG_DL_FALLBACK) : vgNetZoneCode("adsterra", VG_BR_FALLBACK);
 /* Download: attach a unique click ID (subid) so the ad network can
    report a real install back to us. The click ID is stored as a
    pending install; 24h is granted ONLY when the network postback
